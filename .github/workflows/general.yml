@@ -16,8 +16,8 @@ jobs:
     steps:
       - name: Setup environment
         run: |
-          apt update
-          apt install libdev-dev libasound1-dev
+          sudo apt -y update
+          sudo apt -y install libdev-dev libasound1-dev
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
@@ -47,6 +47,10 @@ jobs:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
+      - name: Setup environment
+        run: |
+          sudo apt -y update
+          sudo apt -y install libdev-dev libasound1-dev
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
