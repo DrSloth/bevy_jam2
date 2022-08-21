@@ -59,6 +59,7 @@ jobs:
           components: clippy
       - uses: actions-rs/clippy-check@v1
         with:
+          name: Clippy results
           token: ${{ secrets.GITHUB_TOKEN }}
           args: |
                   -- -D clippy::pedantic -D clippy::unwrap_used -D clippy::expect_used -D clippy::integer_arithmetic 
