@@ -17,7 +17,7 @@ jobs:
       - name: Setup environment
         run: |
           sudo apt -y update
-          sudo apt -y install libdev-dev libasound1-dev
+          sudo apt -y install libudev-dev libasound2-dev
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
@@ -50,7 +50,7 @@ jobs:
       - name: Setup environment
         run: |
           sudo apt -y update
-          sudo apt -y install libdev-dev libasound1-dev
+          sudo apt -y install libudev-dev libasound2-dev
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
