@@ -1,5 +1,7 @@
 //! Game submission for the second bevy jam
 
+mod maps;
+
 use bevy::prelude::*;
 
 fn main() {

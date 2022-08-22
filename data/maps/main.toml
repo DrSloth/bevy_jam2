@@ -1,0 +1,9 @@
+[sprites]
+wall = "assets/sprites/map/wall.png"
+
+[sections.tutorial]
+base_dir = "data/maps/rooms/tutorial/"
+rooms = ["room0", "room1", "room2", "room3", "room4", "room5"]
+
+[sections.tutorial.colors]
+wall = "#000000"
