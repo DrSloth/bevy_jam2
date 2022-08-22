@@ -7,10 +7,13 @@ edition = "2021"
 
 [dependencies]
 bevy = { version = "0.8.0", features = ["dynamic"] }
+
+# Error handling
 thiserror = "1.0.32"
-rust-embed = "6.4.0"
+anyhow = "1.0.62"
 
 # IO
+rust-embed = "6.4.0"
 serde = { version = "1.0.144", features = ["derive"] }
 toml = "0.5.9"
 

@@ -2,7 +2,11 @@
 
 mod maps;
 
+mod embed_io;
+
+use bevy::asset::FileAssetIo;
 use bevy::prelude::*;
+use crate::embed_io::EmbedIo;
 
 fn main() {
     App::new()
@@ -15,6 +19,16 @@ fn main() {
 
 /// Create the main game world
 pub fn setup_system(mut commands: Commands) {
+    commands.insert_resource(
+        if cfg!(debug_assertions) {
+            AssetServer::new(
+                FileAssetIo::new("assets", true)
+            )
+        } else {
+            AssetServer::new(EmbedIo)
+        }
+    );
+
     commands.spawn_bundle(Camera2dBundle::default());
 
     commands
