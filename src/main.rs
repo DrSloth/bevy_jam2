@@ -5,7 +5,8 @@
 mod asset_loaders;
 
 use bevy::prelude::*;
-use crate::asset_loaders::maps::insert_map_as_resource;
+use crate::asset_loaders::maps;
+use crate::maps::Map;
 
 fn main() {
     App::new()
@@ -13,16 +14,17 @@ fn main() {
         .add_startup_system(setup_system)
         .add_system(player_move_system)
         .add_system(gravity_system)
+        .insert_resource(maps::map_as_resource("maps/main.toml"))
         .run();
 }
 
 /// Create the main game world
-pub fn setup_system(mut commands: Commands) {
-    if let Err(e) = insert_map_as_resource(&mut commands, "maps/main.toml") {
-        panic!("There was an error parsing the map: {:?}", e);
-    }
-
+pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<Assets<Image>>) {
     commands.spawn_bundle(Camera2dBundle::default());
+
+    if let Err(e) = maps::load_room_sprites(&mut assets, &mut commands, &map, "tutorial", "room0") {
+        panic!("Could not load initial room: {}", e);
+    }
 
     commands
         .spawn_bundle(SpriteBundle {
