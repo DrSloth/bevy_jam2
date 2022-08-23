@@ -2,16 +2,14 @@ use std::path::{Path, PathBuf};
 use bevy::asset::{AssetIo, AssetIoError, BoxedFuture, FileType, Metadata};
 use rust_embed::RustEmbed;
 
-#[derive(RustEmbed)]
-#[folder = "assets/"]
-pub struct EmbedIo;
+pub struct EmbedIo<T: RustEmbed>(T);
 
-impl AssetIo for EmbedIo {
+impl<T: RustEmbed> AssetIo for EmbedIo<T> {
     fn load_path<'a>(&'a self, path: &'a Path) -> BoxedFuture<'a, anyhow::Result<Vec<u8>, AssetIoError>> {
         Box::pin(async move {
             path.as_os_str()
                 .to_str()
-                .and_then(Self::get)
+                .and_then(T::get)
                 .map(|f| f.data.to_vec())
                 .ok_or_else(|| AssetIoError::NotFound(PathBuf::from(path)))
         })
@@ -22,7 +20,7 @@ impl AssetIo for EmbedIo {
             .into_os_string()
             .into_string()
             .map(|path|
-                Self::iter()
+                T::iter()
                     .filter(move |s| s.starts_with(&path))
                     .map(|s| PathBuf::from(&*s))
             )
@@ -33,7 +31,7 @@ impl AssetIo for EmbedIo {
     fn get_metadata(&self, path: &Path) -> anyhow::Result<Metadata, AssetIoError> {
         path.as_os_str()
             .to_str()
-            .map(Self::get)
+            .map(T::get)
             .map(|file| match file {
                 Some(_) => FileType::File,
                 None => FileType::Directory,

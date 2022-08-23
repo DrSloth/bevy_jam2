@@ -1,11 +1,10 @@
 //! Game submission for the second bevy jam
 
-mod maps;
-
-mod embed_io;
+mod assets;
 
 use bevy::asset::FileAssetIo;
 use bevy::prelude::*;
+use crate::assets::{DataAssetServer, EmbeddedData};
 use crate::embed_io::EmbedIo;
 
 fn main() {
@@ -19,15 +18,7 @@ fn main() {
 
 /// Create the main game world
 pub fn setup_system(mut commands: Commands) {
-    commands.insert_resource(
-        if cfg!(debug_assertions) {
-            AssetServer::new(
-                FileAssetIo::new("assets", true)
-            )
-        } else {
-            AssetServer::new(EmbedIo)
-        }
-    );
+    commands = assets::load_asset_servers(commands);
 
     commands.spawn_bundle(Camera2dBundle::default());
 

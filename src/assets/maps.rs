@@ -2,6 +2,7 @@ use serde::Deserialize;
 use std::path::Path;
 use bevy::prelude::*;
 use bevy::utils::HashMap;
+use crate::DataAssetServer;
 
 #[derive(Deserialize)]
 pub struct Map {
@@ -22,8 +23,8 @@ pub enum MapParseError {
     ParseError(toml::de::Error),
 }
 
-/// https://bevy-cheatbook.github.io/assets/assetserver.html
-pub fn load_map_from_file(mut commands: Commands, server: Res<AssetServer>) -> Result<Map, MapParseError> {
+pub fn load_map_from_file(mut commands: Commands, server: Res<DataAssetServer>) -> Result<Map, MapParseError> {
+    let h = server.load("maps/");
     toml::from_str("").map_err(MapParseError::ParseError)
 }
 
