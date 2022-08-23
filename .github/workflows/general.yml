@@ -1,6 +1,10 @@
 name: Rust
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -10,6 +14,10 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     steps:
+      - name: Setup environment
+        run: |
+          sudo apt -y update
+          sudo apt -y install libudev-dev libasound2-dev
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
@@ -39,6 +47,10 @@ jobs:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
+      - name: Setup environment
+        run: |
+          sudo apt -y update
+          sudo apt -y install libudev-dev libasound2-dev
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
@@ -47,32 +59,15 @@ jobs:
           components: clippy
       - uses: actions-rs/clippy-check@v1
         with:
+          name: Clippy results
           token: ${{ secrets.GITHUB_TOKEN }}
           args: |
-                  -- -D clippy::pedantic -D clippy::unwrap_used -D clippy::expect_used -D clippy::integer_arithmetic 
-                  -D clippy::indexing_slicing -D clippy::format_push_string -D clippy::string_add -D clippy::string_add_assign 
+                  -- -D clippy::pedantic -D clippy::unwrap_used -D clippy::expect_used -D clippy::integer_arithmetic
+                  -D clippy::indexing_slicing -D clippy::format_push_string -D clippy::string_add -D clippy::string_add_assign
                   -D clippy::string_lit_as_bytes -D clippy::string_to_string
                   -D clippy::clone_on_ref_ptr -D clippy::default_union_representation
                   -D clippy::rc_buffer -D clippy::rc_mutex -D clippy::str_to_string -D clippy::undocumented_unsafe_blocks
                   -D clippy::default_numeric_fallback -D clippy::separated_literal_suffix -D clippy::todo -D missing_docs
                   -A clippy::must_use_candidate -A clippy::needless_pass_by_value -A clippy::module_name_repetitions
                   -D non_ascii_idents
-                  -D warnings 
-
-  coverage:
-    name: Code coverage
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-
-      - name: Run cargo-tarpaulin
-        uses: actions-rs/tarpaulin@v0.1
-        with:
-          args: '--ignore-tests'
+                  -D warnings
