@@ -30,6 +30,8 @@ pub enum AssetLoadError {
     NotFound(String),
     #[error("The given path was invalid unicode")]
     InvalidPath,
+    #[error("The given image asset could not be decoded")]
+    DecodeImageError,
 }
 
 impl<T: RustEmbed> EmbeddedAssetLoader for T {
@@ -44,9 +46,11 @@ impl<T: RustEmbed> EmbeddedAssetLoader for T {
     }
 
     fn load_image_as_asset<P: AsRef<Path>>(assets: &mut Assets<Image>, path: P) -> Result<Handle<Image>, AssetLoadError> {
-        let mut image = ImageReader::new(Cursor::new(Self::load(path)?));
+        let mut image = ImageReader::new(
+            Cursor::new(Self::load(path)?)
+        );
         image.set_format(ImageFormat::Png);
-        let conv = image.decode().unwrap().into_rgba32f();
+        let conv = image.decode().map_err(|_| AssetLoadError::DecodeImageError)?.into_rgba32f();
         let mut texture = Image::new(
             Extent3d {
                 width: conv.width(),
