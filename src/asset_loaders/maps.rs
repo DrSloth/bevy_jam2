@@ -15,7 +15,7 @@ pub struct Map {
 #[derive(Deserialize)]
 pub struct Section {
     base_dir: PathBuf,
-    room: Vec<String>,
+    rooms: Vec<String>,
     colors: HashMap<String, String>,
 }
 
