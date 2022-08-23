@@ -1,8 +1,11 @@
 //! Game submission for the second bevy jam
+//! # Panics
+//! When the map file could not be found or loaded
 
-mod assets;
+mod asset_loaders;
 
 use bevy::prelude::*;
+use crate::asset_loaders::maps::insert_map_as_resource;
 
 fn main() {
     App::new()
@@ -15,7 +18,9 @@ fn main() {
 
 /// Create the main game world
 pub fn setup_system(mut commands: Commands) {
-    commands = assets::load_asset_servers(commands);
+    if let Err(e) = insert_map_as_resource(&mut commands, "maps/main.toml") {
+        panic!("There was an error parsing the map: {:?}", e);
+    }
 
     commands.spawn_bundle(Camera2dBundle::default());
 
