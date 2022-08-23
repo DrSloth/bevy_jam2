@@ -69,5 +69,6 @@ jobs:
                   -D clippy::rc_buffer -D clippy::rc_mutex -D clippy::str_to_string -D clippy::undocumented_unsafe_blocks
                   -D clippy::default_numeric_fallback -D clippy::separated_literal_suffix -D clippy::todo -D missing_docs
                   -A clippy::must_use_candidate -A clippy::needless_pass_by_value -A clippy::module_name_repetitions
+                  -A clippy::enum_variant_names
                   -D non_ascii_idents
                   -D warnings
