@@ -2,6 +2,7 @@ mod embed_io;
 mod maps;
 
 use std::ops::Deref;
+use rust_embed::RustEmbed;
 use bevy::prelude::*;
 use bevy::asset::{AssetServer, FileAssetIo};
 use crate::assets::embed_io::EmbedIo;
@@ -34,7 +35,7 @@ impl Deref for DataAssetServer {
     }
 }
 
-pub fn load_asset_servers(mut commands: Commands) -> Commands {
+pub fn load_asset_servers<'a, 'b>(mut commands: Commands<'a, 'b>) -> Commands<'a, 'b> {
     commands.insert_resource(DataAssetServer(
         if cfg!(debug_assertions) {
             AssetServer::new(

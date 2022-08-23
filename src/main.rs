@@ -2,10 +2,7 @@
 
 mod assets;
 
-use bevy::asset::FileAssetIo;
 use bevy::prelude::*;
-use crate::assets::{DataAssetServer, EmbeddedData};
-use crate::embed_io::EmbedIo;
 
 fn main() {
     App::new()

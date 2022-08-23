@@ -1,18 +1,18 @@
 use serde::Deserialize;
-use std::path::Path;
+use std::path::PathBuf;
 use bevy::prelude::*;
 use bevy::utils::HashMap;
-use crate::DataAssetServer;
+use crate::assets::DataAssetServer;
 
 #[derive(Deserialize)]
 pub struct Map {
-    sprites: HashMap<String, Path>,
+    sprites: HashMap<String, PathBuf>,
     sections: HashMap<String, Section>,
 }
 
 #[derive(Deserialize)]
 pub struct Section {
-    base_dir: Path,
+    base_dir: PathBuf,
     room: Vec<String>,
     colors: HashMap<String, String>,
 }
@@ -23,10 +23,9 @@ pub enum MapParseError {
     ParseError(toml::de::Error),
 }
 
-pub fn load_map_from_file(mut commands: Commands, server: Res<DataAssetServer>) -> Result<Map, MapParseError> {
-    let h = server.load("maps/");
-    toml::from_str("").map_err(MapParseError::ParseError)
-}
+// pub fn load_map_from_file(mut commands: Commands, server: Res<DataAssetServer>) -> Result<Map, MapParseError> {
+//     toml::from_str("").map_err(MapParseError::ParseError)
+// }
 
 #[cfg(test)]
 mod tests {

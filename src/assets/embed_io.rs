@@ -2,9 +2,9 @@ use std::path::{Path, PathBuf};
 use bevy::asset::{AssetIo, AssetIoError, BoxedFuture, FileType, Metadata};
 use rust_embed::RustEmbed;
 
-pub struct EmbedIo<T: RustEmbed>(T);
+pub struct EmbedIo<T: RustEmbed + Send + Sync + 'static>(pub T);
 
-impl<T: RustEmbed> AssetIo for EmbedIo<T> {
+impl<T: RustEmbed + Send + Sync + 'static> AssetIo for EmbedIo<T> {
     fn load_path<'a>(&'a self, path: &'a Path) -> BoxedFuture<'a, anyhow::Result<Vec<u8>, AssetIoError>> {
         Box::pin(async move {
             path.as_os_str()
