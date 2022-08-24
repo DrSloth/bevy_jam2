@@ -6,7 +6,7 @@ use bevy::asset::{Assets, Handle};
 use bevy::prelude::*;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
 use bevy::render::texture::ImageSampler;
-use image::{ImageFormat, Rgba32FImage};
+use image::{DynamicImage, ImageBuffer, ImageFormat, Pixel, Rgba};
 use rust_embed::RustEmbed;
 use image::io::Reader as ImageReader;
 use thiserror::Error;
@@ -22,7 +22,7 @@ pub struct EmbeddedData;
 pub trait EmbeddedAssetLoader {
     fn load<P: AsRef<Path>>(path: P) -> Result<Vec<u8>, AssetLoadError>;
     fn load_image_as_asset<P: AsRef<Path>>(assets: &mut Assets<Image>, path: P) -> Result<Handle<Image>, AssetLoadError>;
-    fn load_image<P: AsRef<Path>>(path: P) -> Result<Rgba32FImage, AssetLoadError>;
+    fn load_image<P: AsRef<Path>, I: Pixel + ImageConverter>(path: P) -> Result<I::Buffer, AssetLoadError>;
 }
 
 #[derive(Error, Debug)]
@@ -48,7 +48,7 @@ impl<T: RustEmbed> EmbeddedAssetLoader for T {
 
     /// TODO: Optimize
     fn load_image_as_asset<P: AsRef<Path>>(assets: &mut Assets<Image>, path: P) -> Result<Handle<Image>, AssetLoadError> {
-        Self::load_image(path).map(|image| {
+        Self::load_image::<P, Rgba<f32>>(path).map(|image| {
             let mut texture = Image::new(
                 Extent3d {
                     width: image.width(),
@@ -65,12 +65,32 @@ impl<T: RustEmbed> EmbeddedAssetLoader for T {
         })
     }
 
-    fn load_image<P: AsRef<Path>>(path: P) -> Result<Rgba32FImage, AssetLoadError> {
+    fn load_image<P: AsRef<Path>, I: Pixel + ImageConverter>(path: P) -> Result<I::Buffer, AssetLoadError> {
         let mut image = ImageReader::new(
             Cursor::new(Self::load(path)?)
         );
         image.set_format(ImageFormat::Png);
-        Ok(image.decode().map_err(|_| AssetLoadError::DecodeImageError)?.into_rgba32f())
+        // Ok(image.decode().map_err(|_| AssetLoadError::DecodeImageError)?.conv())
+        Ok(I::conv(image.decode().map_err(|_| AssetLoadError::DecodeImageError)?))
+    }
+}
+
+pub trait ImageConverter {
+    type Buffer;
+    fn conv(image: DynamicImage) -> Self::Buffer;
+}
+
+impl ImageConverter for Rgba<f32> {
+    type Buffer = ImageBuffer<Rgba<f32>, Vec<f32>>;
+    fn conv(image: DynamicImage) -> Self::Buffer {
+        image.to_rgba32f()
+    }
+}
+
+impl ImageConverter for Rgba<u8> {
+    type Buffer = ImageBuffer<Rgba<u8>, Vec<u8>>;
+    fn conv(image: DynamicImage) -> Self::Buffer {
+        image.to_rgba8()
     }
 }
 

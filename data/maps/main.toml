@@ -1,8 +1,5 @@
 [sprites]
-wall = "assets/sprites/map/wall.png"
+wall = "sprites/map/wall.png"
 
 [sections.tutorial]
 base_dir = "maps/sections/tutorial/"
-
-[sections.tutorial.colors]
-wall = "#000000"
