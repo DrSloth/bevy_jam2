@@ -72,6 +72,7 @@ pub fn load_room_sprites(
                 commands,
                 map,
                 &room,
+                i,
                 sec.base_dir.join(room_id).join(format!("layer{}.png", i)),
             )
             .map_err(LoadRoomError::LoadLayerError)?;
@@ -97,6 +98,7 @@ fn load_layer_file<P: AsRef<Path>>(
     commands: &mut Commands,
     map: &Map,
     room: &Room,
+    layer_n: u32,
     path: P,
 ) -> Result<(), LoadLayerError> {
     let image = EmbeddedData::load_image::<P, Rgba<u8>>(path).map_err(LoadLayerError::LoadError)?;
@@ -133,7 +135,7 @@ fn load_layer_file<P: AsRef<Path>>(
                         ..Default::default()
                     },
                     transform: Transform {
-                        translation: Vec3::new((x as f32) * TILE_SIZE, (y as f32) * TILE_SIZE, 0.0),
+                        translation: Vec3::new((x as f32) * TILE_SIZE, (y as f32) * TILE_SIZE, 0.0 - (room.layers.saturating_sub(layer_n) as f32)),
                         ..Default::default()
                     },
                     ..Default::default()

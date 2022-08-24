@@ -73,6 +73,11 @@ pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<As
                 custom_size: Some(Vec2::splat(8.0)),
                 ..Default::default()
             },
+            transform: Transform {
+                // Always be in front of player
+                translation: Vec3::new(0.0, 0.0, 1.0),
+                ..Default::default()
+            },
             ..Default::default()
         })
         .insert(MouseCursor);
