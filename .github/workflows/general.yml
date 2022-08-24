@@ -62,12 +62,13 @@ jobs:
           name: Clippy results
           token: ${{ secrets.GITHUB_TOKEN }}
           args: |
-                  -- -D clippy::pedantic -D clippy::unwrap_used -D clippy::expect_used -D clippy::integer_arithmetic 
-                  -D clippy::indexing_slicing -D clippy::format_push_string -D clippy::string_add -D clippy::string_add_assign 
-                  -D clippy::string_lit_as_bytes -D clippy::string_to_string -D clippy::as_underscore 
+                  -- -D clippy::pedantic -D clippy::unwrap_used -D clippy::expect_used -D clippy::integer_arithmetic
+                  -D clippy::indexing_slicing -D clippy::format_push_string -D clippy::string_add -D clippy::string_add_assign
+                  -D clippy::string_lit_as_bytes -D clippy::string_to_string
                   -D clippy::clone_on_ref_ptr -D clippy::default_union_representation
                   -D clippy::rc_buffer -D clippy::rc_mutex -D clippy::str_to_string -D clippy::undocumented_unsafe_blocks
                   -D clippy::default_numeric_fallback -D clippy::separated_literal_suffix -D clippy::todo -D missing_docs
-                  -A clippy::must_use_candidate -A clippy::needless_pass_by_value
+                  -A clippy::must_use_candidate -A clippy::needless_pass_by_value -A clippy::module_name_repetitions
+                  -A clippy::enum_variant_names
                   -D non_ascii_idents
-                  -D warnings 
+                  -D warnings
