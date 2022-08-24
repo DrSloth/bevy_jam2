@@ -19,7 +19,7 @@ pub struct Collider {
 
 /// A movable collider which should not pass through
 #[derive(Component, Debug)]
-pub struct MovableCollider {
+pub struct MoveableCollider {
     pub size: Vec2,
 }
 
@@ -28,7 +28,7 @@ pub struct MovableCollider {
 pub fn collision_system(
     collider_query: Query<(&Transform, &Collider)>,
     mut movable_collider_query: Query<
-        (&mut Transform, &MovableCollider, Entity),
+        (&mut Transform, &MoveableCollider, Entity),
         Without<Collider>,
     >,
     mut collision_events_writer: EventWriter<CollisionEvent>,
@@ -43,7 +43,7 @@ pub fn collision_system(
             );
 
             if let Some(collision) = collision {
-                collide(
+                move_out_of_bounds(
                     &collision,
                     &mut *moving_transform,
                     moving_collider,
@@ -56,10 +56,10 @@ pub fn collision_system(
     }
 }
 
-fn collide(
+fn move_out_of_bounds(
     collision: &Collision,
     moving_transform: &mut Transform,
-    moving_collider: &MovableCollider,
+    moving_collider: &MoveableCollider,
     static_transform: &Transform,
     static_collider: &Collider,
 ) {

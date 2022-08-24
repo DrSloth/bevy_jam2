@@ -1,6 +1,6 @@
 use bevy::{prelude::*, sprite::collide_aabb::Collision};
 
-use crate::collision::{CollisionEvent, MovableCollider};
+use crate::collision::{CollisionEvent, MoveableCollider};
 
 pub const GRAVITY: f32 = 0.9;
 pub const GRAVITY_MAX: f32 = -22.0;
@@ -104,7 +104,7 @@ pub fn gravity_system(mut query: Query<(&mut VelocityMap, &mut Gravity)>) {
 
 pub fn landing_system(
     mut collision_event_reader: EventReader<CollisionEvent>,
-    mut query: Query<(&mut Gravity, &mut VelocityMap), With<MovableCollider>>,
+    mut query: Query<(&mut Gravity, &mut VelocityMap), With<MoveableCollider>>,
 ) {
     for evt in collision_event_reader.iter() {
         match evt.collision {

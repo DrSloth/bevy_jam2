@@ -1,5 +1,11 @@
-use bevy::{ecs::world::EntityMut, prelude::*, utils::Instant};
-use std::{any::TypeId, time::Duration};
+pub mod collectibles;
+
+use bevy::{ecs::system::EntityCommands, prelude::*, utils::Instant};
+use std::{
+    any::TypeId,
+    fmt::{self, Debug, Formatter},
+    time::Duration,
+};
 
 use super::{MouseCursor, PlayerMovement};
 use crate::{
@@ -7,20 +13,72 @@ use crate::{
     physics::{Gravity, VelocityMap},
 };
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct AbilityId(TypeId);
 
-pub trait Ability: Component + Sized + 'static {
+pub trait Ability: Component + Default + Sized + 'static {
     fn ability_id() -> AbilityId {
         AbilityId(TypeId::of::<Self>())
     }
 
-    fn unequip(entity: &mut EntityMut) {
-        entity.remove::<Self>();
+    fn unequip(player: &mut EntityCommands, inventory: &mut PlayerInventory) {
+        player.remove::<Self>();
+        inventory.unequip(Self::ability_id());
+    }
+
+    fn equip(player: &mut EntityCommands, inventory: &mut PlayerInventory, equip_slot: EquipSlot) {
+        player.insert(Self::default());
+        inventory.equip(Self::ability_id(), equip_slot);
+    }
+
+    fn descriptor() -> AbilityDescriptor {
+        AbilityDescriptor {
+            id: Self::ability_id(),
+            unequip: Self::unequip,
+            equip: Self::equip,
+        }
     }
 }
 
-#[derive(Component, Debug)]
+#[derive(Clone)]
+pub struct AbilityDescriptor {
+    id: AbilityId,
+    unequip: fn(&mut EntityCommands, &mut PlayerInventory),
+    equip: fn(&mut EntityCommands, &mut PlayerInventory, equip_slot: EquipSlot),
+}
+
+impl AbilityDescriptor {
+    pub fn id(&self) -> &AbilityId {
+        &self.id
+    }
+
+    #[allow(dead_code)] // NOTE will be used later
+    pub fn unequip(&self, entity: &mut EntityCommands, inventory: &mut PlayerInventory) {
+        (self.unequip)(entity, inventory);
+    }
+
+    pub fn equip(
+        &self,
+        entity: &mut EntityCommands,
+        inventory: &mut PlayerInventory,
+        equip_slot: EquipSlot,
+    ) {
+        (self.equip)(entity, inventory, equip_slot);
+    }
+
+    #[allow(dead_code)] // NOTE will be used later
+    pub fn is_none(&self) -> bool {
+        self.id() == &NoneAbility::ability_id()
+    }
+}
+
+impl Debug for AbilityDescriptor {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "AbilityDescriptor({:?})", self.id)
+    }
+}
+
+#[derive(Component, Debug, Default)]
 pub struct NoneAbility;
 
 impl Ability for NoneAbility {}
@@ -34,9 +92,9 @@ impl PlayerInventory {
     //     id == self.0 || id == self.1
     // }
 
-    // pub fn new() -> Self {
-    //     Self::new_with::<NoneAbility, NoneAbility>()
-    // }
+    pub fn new() -> Self {
+        Self::new_with::<NoneAbility, NoneAbility>()
+    }
 
     pub fn new_with<T: Ability, U: Ability>() -> Self {
         Self(T::ability_id(), U::ability_id())
@@ -46,17 +104,37 @@ impl PlayerInventory {
     //     self.equip(T::ability_id(), slot)
     // }
 
-    // pub fn equip(&mut self, id: AbilityId, slot: EquipSlot) {
-    //     match slot {
-    //         EquipSlot::Left => self.0 = id,
-    //         EquipSlot::Right => self.1 = id,
-    //     }
-    // }
+    pub fn equip(&mut self, id: AbilityId, slot: EquipSlot) {
+        match slot {
+            EquipSlot::Left => self.0 = id,
+            EquipSlot::Right => self.1 = id,
+        }
+    }
+
+    pub fn unequip(&mut self, id: AbilityId) {
+        if self.0 == id {
+            self.0 = NoneAbility::ability_id();
+        }
+
+        if self.1 == id {
+            self.1 = NoneAbility::ability_id();
+        }
+    }
 
     pub fn is_equipped_at<T: Ability>(&self, slot: EquipSlot) -> bool {
         match slot {
             EquipSlot::Left => T::ability_id() == self.0,
             EquipSlot::Right => T::ability_id() == self.1,
+        }
+    }
+
+    pub fn first_free_slot(&self) -> Option<EquipSlot> {
+        if self.0 == NoneAbility::ability_id() {
+            Some(EquipSlot::Left)
+        } else if self.1 == NoneAbility::ability_id() {
+            Some(EquipSlot::Right)
+        } else {
+            None
         }
     }
 }
