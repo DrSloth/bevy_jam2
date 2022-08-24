@@ -13,17 +13,17 @@ mod physics;
 mod player;
 mod util;
 
-use bevy::prelude::*;
-use crate::asset_loaders::{EmbeddedAssetLoader, EmbeddedAssets, maps};
+use crate::asset_loaders::{maps, EmbeddedAssetLoader, EmbeddedAssets};
 use crate::maps::Map;
+use bevy::prelude::*;
 
+use camera::{FollowEntity, FollowedByCamera};
 use collision::{Collider, CollisionEvent, MovableCollider};
 use physics::{Gravity, VelocityMap};
 use player::{
     abilities::{self, PlayerDash, PlayerInventory, PlayerShoot},
     JumpEvent, MouseCursor, PlayerMovement,
 };
-use camera::{FollowedByCamera, FollowEntity};
 
 const PLAYER_SIZE: f32 = 16.0;
 
@@ -85,8 +85,9 @@ fn add_initial_room(commands: &mut Commands, map: &Map, assets: &mut Assets<Imag
 }
 
 fn add_player(commands: &mut Commands, assets: &mut Assets<Image>) {
-    let texture = EmbeddedAssets::load_image_as_asset(assets, "sprites/character/movement/idle.png")
-        .unwrap_or_else(|e| panic!("The player sprite could not be loaded: {}", e));
+    let texture =
+        EmbeddedAssets::load_image_as_asset(assets, "sprites/character/movement/idle.png")
+            .unwrap_or_else(|e| panic!("The player sprite could not be loaded: {}", e));
     commands
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {

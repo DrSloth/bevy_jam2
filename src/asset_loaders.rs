@@ -1,14 +1,14 @@
 pub mod maps;
 
-use std::io::Cursor;
-use std::path::Path;
 use bevy::asset::{Assets, Handle};
 use bevy::prelude::*;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
 use bevy::render::texture::ImageSampler;
+use image::io::Reader as ImageReader;
 use image::{DynamicImage, ImageBuffer, ImageFormat, Pixel, Rgba};
 use rust_embed::RustEmbed;
-use image::io::Reader as ImageReader;
+use std::io::Cursor;
+use std::path::Path;
 use thiserror::Error;
 
 #[derive(RustEmbed)]
@@ -21,8 +21,13 @@ pub struct EmbeddedData;
 
 pub trait EmbeddedAssetLoader {
     fn load<P: AsRef<Path>>(path: P) -> Result<Vec<u8>, AssetLoadError>;
-    fn load_image_as_asset<P: AsRef<Path>>(assets: &mut Assets<Image>, path: P) -> Result<Handle<Image>, AssetLoadError>;
-    fn load_image<P: AsRef<Path>, I: Pixel + ImageConverter>(path: P) -> Result<I::Buffer, AssetLoadError>;
+    fn load_image_as_asset<P: AsRef<Path>>(
+        assets: &mut Assets<Image>,
+        path: P,
+    ) -> Result<Handle<Image>, AssetLoadError>;
+    fn load_image<P: AsRef<Path>, I: Pixel + ImageConverter>(
+        path: P,
+    ) -> Result<I::Buffer, AssetLoadError>;
 }
 
 #[derive(Error, Debug)]
@@ -37,7 +42,8 @@ pub enum AssetLoadError {
 
 impl<T: RustEmbed> EmbeddedAssetLoader for T {
     fn load<P: AsRef<Path>>(path: P) -> Result<Vec<u8>, AssetLoadError> {
-        let path = path.as_ref()
+        let path = path
+            .as_ref()
             .as_os_str()
             .to_str()
             .ok_or(AssetLoadError::InvalidPath)?;
@@ -47,7 +53,10 @@ impl<T: RustEmbed> EmbeddedAssetLoader for T {
     }
 
     /// TODO: Optimize
-    fn load_image_as_asset<P: AsRef<Path>>(assets: &mut Assets<Image>, path: P) -> Result<Handle<Image>, AssetLoadError> {
+    fn load_image_as_asset<P: AsRef<Path>>(
+        assets: &mut Assets<Image>,
+        path: P,
+    ) -> Result<Handle<Image>, AssetLoadError> {
         Self::load_image::<P, Rgba<f32>>(path).map(|image| {
             let mut texture = Image::new(
                 Extent3d {
@@ -57,7 +66,11 @@ impl<T: RustEmbed> EmbeddedAssetLoader for T {
                 },
                 TextureDimension::D2,
                 // darken_image(conv.into_raw()).into_iter().map(|f| f.to_ne_bytes()).flatten().collect(),
-                image.into_raw().into_iter().flat_map(f32::to_ne_bytes).collect(),
+                image
+                    .into_raw()
+                    .into_iter()
+                    .flat_map(f32::to_ne_bytes)
+                    .collect(),
                 TextureFormat::Rgba32Float,
             );
             texture.sampler_descriptor = ImageSampler::nearest();
@@ -65,12 +78,16 @@ impl<T: RustEmbed> EmbeddedAssetLoader for T {
         })
     }
 
-    fn load_image<P: AsRef<Path>, I: Pixel + ImageConverter>(path: P) -> Result<I::Buffer, AssetLoadError> {
-        let mut image = ImageReader::new(
-            Cursor::new(Self::load(path)?)
-        );
+    fn load_image<P: AsRef<Path>, I: Pixel + ImageConverter>(
+        path: P,
+    ) -> Result<I::Buffer, AssetLoadError> {
+        let mut image = ImageReader::new(Cursor::new(Self::load(path)?));
         image.set_format(ImageFormat::Png);
-        Ok(I::conv(image.decode().map_err(|_| AssetLoadError::DecodeImageError)?))
+        Ok(I::conv(
+            image
+                .decode()
+                .map_err(|_| AssetLoadError::DecodeImageError)?,
+        ))
     }
 }
 
