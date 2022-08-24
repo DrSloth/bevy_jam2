@@ -42,7 +42,7 @@ impl<T: RustEmbed> EmbeddedAssetLoader for T {
             .to_str()
             .ok_or(AssetLoadError::InvalidPath)?;
         T::get(path)
-            .ok_or_else(|| AssetLoadError::NotFound(path.to_string()))
+            .ok_or_else(|| AssetLoadError::NotFound(path.to_owned()))
             .map(|f| f.data.to_vec())
     }
 
@@ -57,7 +57,7 @@ impl<T: RustEmbed> EmbeddedAssetLoader for T {
                 },
                 TextureDimension::D2,
                 // darken_image(conv.into_raw()).into_iter().map(|f| f.to_ne_bytes()).flatten().collect(),
-                image.into_raw().into_iter().map(|f| f.to_ne_bytes()).flatten().collect(),
+                image.into_raw().into_iter().flat_map(f32::to_ne_bytes).collect(),
                 TextureFormat::Rgba32Float,
             );
             texture.sampler_descriptor = ImageSampler::nearest();

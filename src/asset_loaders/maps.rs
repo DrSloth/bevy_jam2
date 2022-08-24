@@ -46,7 +46,7 @@ pub enum LoadRoomError {
     #[error("The given section could not be found: {0}")]
     SectionNotFoundError(String),
     #[error("The given room's config file could not be parsed: {0}")]
-    RoomParseError(ParseError),
+    RoomParseError(TomlParseError),
     #[error("Could not load layer: {0}")]
     LoadLayerError(LoadLayerError),
 }
@@ -87,8 +87,8 @@ fn load_layer_file<P: AsRef<Path>>(assets: &mut Assets<Image>, commands: &mut Co
         let y = image.height() as usize - (i / image.width() as usize);
         if pixel.0[3] != 0 {
             let color_hex = format!("#{}", hex::encode(pixel.0.into_iter().take(3).collect::<Vec<u8>>()));
-            let sprite_id = room.colors.get(&color_hex).ok_or_else(|| LoadLayerError::InvalidColor(color_hex))?;
-            let sprite_path = map.sprites.get(sprite_id).ok_or_else(|| LoadLayerError::InvalidSprite(sprite_id.to_string()))?;
+            let sprite_id = room.colors.get(&color_hex).ok_or(LoadLayerError::InvalidColor(color_hex))?;
+            let sprite_path = map.sprites.get(sprite_id).ok_or(LoadLayerError::InvalidSprite(sprite_id.to_string()))?;
             let size = Vec2::splat(TILE_SIZE as f32);
             commands.spawn_bundle(SpriteBundle {
                 // TODO: Optimize: Reuse already loaded assets by saving handles
@@ -110,7 +110,7 @@ fn load_layer_file<P: AsRef<Path>>(assets: &mut Assets<Image>, commands: &mut Co
 }
 
 #[derive(Error, Debug)]
-pub enum ParseError {
+pub enum TomlParseError {
     #[error("Failed to load file: {0}")]
     LoadError(AssetLoadError),
     #[error("Failed to parse file as UTF-8: {0}")]
@@ -119,9 +119,9 @@ pub enum ParseError {
     ParseError(toml::de::Error),
 }
 
-fn load_toml<T: DeserializeOwned, P: AsRef<Path>>(path: P) -> Result<T, ParseError> {
+fn load_toml<T: DeserializeOwned, P: AsRef<Path>>(path: P) -> Result<T, TomlParseError> {
     EmbeddedData::load(path)
-        .map_err(ParseError::LoadError)
-        .and_then(|data| String::from_utf8(data).map_err(ParseError::ParseFileError))
-        .and_then(|s| toml::from_str(&s).map_err(ParseError::ParseError))
+        .map_err(TomlParseError::LoadError)
+        .and_then(|data| String::from_utf8(data).map_err(TomlParseError::ParseFileError))
+        .and_then(|s| toml::from_str(&s).map_err(TomlParseError::ParseError))
 }

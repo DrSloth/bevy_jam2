@@ -1,10 +1,10 @@
 use bevy::prelude::*;
 
-/// Be followed by all cameras that have the FollowEntity component
+/// Be followed by all cameras that have the `FollowEntity` component
 #[derive(Component, Debug)]
 pub struct FollowedByCamera;
 
-/// For cameras that should follow the entity with the FollowEntity component
+/// For cameras that should follow the entity with the `FollowEntity` component
 #[derive(Component, Debug)]
 pub struct FollowEntity;
 
