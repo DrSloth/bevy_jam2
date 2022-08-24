@@ -176,8 +176,9 @@ pub fn player_shoot_system(
     mut player_query: Query<(&Transform, &PlayerInventory, &mut PlayerShoot)>,
     cursor_query: Query<&Transform, With<MouseCursor>>,
 ) {
-    const PLAYER_PROJECTILE_SPEED: f32 = 20.0;
+    const PLAYER_PROJECTILE_SPEED: f32 = 5.5;
     const PLAYER_SHOOT_INTERVAL: Duration = Duration::from_millis(450);
+    const PLAYER_SHOT_SIZE: f32 = 4.0;
 
     for click in mouse_input.get_pressed() {
         for (player_transform, inv, mut player_shoot) in player_query.iter_mut() {
@@ -206,7 +207,7 @@ pub fn player_shoot_system(
                     .spawn_bundle(SpriteBundle {
                         sprite: Sprite {
                             color: Color::rgb(0.0, 1.0, 1.0),
-                            custom_size: Some(Vec2::new(15.0, 15.0)),
+                            custom_size: Some(Vec2::new(PLAYER_SHOT_SIZE, PLAYER_SHOT_SIZE)),
                             ..Default::default()
                         },
                         transform: Transform::from_translation(player_transform.translation),
@@ -248,7 +249,7 @@ pub fn player_dash_system(
         &PlayerInventory,
     )>,
 ) {
-    const PLAYER_DASH_SPEED: f32 = 22.0;
+    const PLAYER_DASH_SPEED: f32 = 8.0;
     const PLAYER_DASH_INTERVAL: Duration = Duration::from_millis(1500);
     const PLAYER_RUN_EPSILON: f32 = 0.2;
     const PLAYER_DASH_DURATION: Duration = Duration::from_millis(150);

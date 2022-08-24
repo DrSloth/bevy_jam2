@@ -7,8 +7,17 @@ edition = "2021"
 
 [dependencies]
 bevy = { version = "0.8.0", features = ["dynamic"] }
+
+# Error handling
+thiserror = "1.0.32"
 anyhow = "1.0.62"
+
+# IO
 rust-embed = "6.4.0"
+image = "0.24.3"
+hex = "0.4.3"
+serde = { version = "1.0.144", features = ["derive"] }
+toml = "0.5.9"
 
 [dev-dependencies.cargo-husky]
 version = "1.5.0"

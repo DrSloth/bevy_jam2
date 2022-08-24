@@ -2,8 +2,9 @@ use bevy::{prelude::*, sprite::collide_aabb::Collision};
 
 use crate::collision::{CollisionEvent, MoveableCollider};
 
-pub const GRAVITY: f32 = 0.9;
-pub const GRAVITY_MAX: f32 = -22.0;
+pub const GRAVITY: f32 = 0.07;
+
+pub const GRAVITY_MAX: f32 = -9.0;
 
 /// An id to a velocity inside a velocity map
 #[derive(Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord, Clone, Copy)]
