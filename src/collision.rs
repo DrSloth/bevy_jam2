@@ -19,7 +19,7 @@ pub struct Collider {
 
 /// A movable collider which should not pass through
 #[derive(Component, Debug)]
-pub struct MovableCollider {
+pub struct MoveableCollider {
     pub size: Vec2,
 }
 
@@ -28,22 +28,25 @@ pub struct MovableCollider {
 pub fn collision_system(
     collider_query: Query<(&Transform, &Collider)>,
     mut movable_collider_query: Query<
-        (&mut Transform, &MovableCollider, Entity),
+        (&mut Transform, &MoveableCollider, Entity),
         Without<Collider>,
     >,
     mut collision_events_writer: EventWriter<CollisionEvent>,
 ) {
+    // NOTE this is a fix to make the collisions fell more smooth
+    const COLLISION_TOLERANCE: f32 = 0.001;
+
     for (mut moving_transform, moving_collider, entity) in movable_collider_query.iter_mut() {
         for (static_transform, static_collider) in collider_query.iter() {
             let collision = collide_aabb::collide(
                 moving_transform.translation,
-                moving_collider.size,
+                moving_collider.size + Vec2::new(COLLISION_TOLERANCE, COLLISION_TOLERANCE),
                 static_transform.translation,
                 static_collider.size,
             );
 
             if let Some(collision) = collision {
-                collide(
+                move_out_of_bounds(
                     &collision,
                     &mut *moving_transform,
                     moving_collider,
@@ -56,10 +59,10 @@ pub fn collision_system(
     }
 }
 
-fn collide(
+fn move_out_of_bounds(
     collision: &Collision,
     moving_transform: &mut Transform,
-    moving_collider: &MovableCollider,
+    moving_collider: &MoveableCollider,
     static_transform: &Transform,
     static_collider: &Collider,
 ) {
@@ -67,7 +70,6 @@ fn collide(
         Collision::Top | Collision::Bottom => {
             let signum = collision_signum(collision);
             moving_transform.translation = Vec3::new(
-                // tr1.translation.x + col1.size.x,
                 moving_transform.translation.x,
                 static_transform.translation.y
                     + signum * static_collider.size.y / 2.0

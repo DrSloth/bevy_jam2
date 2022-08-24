@@ -21,7 +21,10 @@ pub fn camera_follow_system(
 ) {
     for mut camera_transform in camera_query.iter_mut() {
         match followed_by_camera_query.get_single() {
-            Ok(entity_transform) => camera_transform.translation = entity_transform.translation,
+            Ok(entity_transform) => {
+                camera_transform.translation.x = entity_transform.translation.x;
+                camera_transform.translation.y = entity_transform.translation.y;
+            }
             Err(e) => panic!(
                 "There is not exactly one entity with FollowedByCamera component: {}",
                 e

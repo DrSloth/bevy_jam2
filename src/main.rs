@@ -17,11 +17,15 @@ use bevy::prelude::*;
 
 use asset_loaders::{maps, EmbeddedAssetLoader, EmbeddedAssets};
 use camera::{FollowEntity, FollowedByCamera};
-use collision::{CollisionEvent, MovableCollider};
+use collision::{CollisionEvent, MoveableCollider};
 use maps::Map;
 use physics::{Gravity, VelocityMap};
 use player::{
-    abilities::{self, PlayerDash, PlayerInventory, PlayerShoot},
+    abilities::{
+        self,
+        collectibles::{self, CollectibleAbilityTrigger},
+        PlayerDash, PlayerInventory, PlayerShoot,
+    },
     JumpEvent, MouseCursor, PlayerMovement,
 };
 
@@ -38,11 +42,12 @@ fn main() {
         .add_system(player::player_land_system)
         .add_system(abilities::player_shoot_system)
         .add_system(combat::move_projectile_system)
+        .add_system(collectibles::collect_ability_system)
         .add_system_to_stage(CoreStage::PreUpdate, player::move_cursor_system)
         .add_system_to_stage(CoreStage::PostUpdate, abilities::player_dash_system)
         .add_system_to_stage(CoreStage::PostUpdate, player::player_fall_system)
         .add_system(physics::gravity_system)
-        .add_system(physics::landing_system)
+        .add_system_to_stage(CoreStage::PostUpdate, physics::landing_system)
         .add_system(collision::collision_system)
         .add_system_to_stage(CoreStage::Last, physics::velocity_system)
         .add_event::<CollisionEvent>()
@@ -59,6 +64,7 @@ pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<As
                 scale: 0.2,
                 ..Default::default()
             },
+            transform: Transform::from_xyz(0.0, 0.0, 10.0),
             ..Default::default()
         })
         .insert(FollowEntity);
@@ -70,7 +76,7 @@ pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<As
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
                 color: Color::rgb(1.0, 0.5, 0.0),
-                custom_size: Some(Vec2::splat(8.0)),
+                custom_size: Some(Vec2::splat(2.0)),
                 ..Default::default()
             },
             transform: Transform {
@@ -81,6 +87,36 @@ pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<As
             ..Default::default()
         })
         .insert(MouseCursor);
+
+    commands
+        .spawn_bundle(SpriteBundle {
+            sprite: Sprite {
+                color: Color::rgb(0.2, 0.2, 1.0),
+                custom_size: Some(Vec2::new(4.0, 4.0)),
+                ..Default::default()
+            },
+            transform: Transform::from_xyz(38.0, 55.0, 0.0),
+            ..Default::default()
+        })
+        .insert(CollectibleAbilityTrigger::new::<PlayerShoot>(
+            Vec2::new(40.0, 600.0),
+            Vec3::new(0.0, 0.0, 0.0),
+        ));
+
+    commands
+        .spawn_bundle(SpriteBundle {
+            sprite: Sprite {
+                color: Color::rgb(0.2, 0.2, 1.0),
+                custom_size: Some(Vec2::new(4.0, 4.0)),
+                ..Default::default()
+            },
+            transform: Transform::from_xyz(5.0, 55.0, 0.0),
+            ..Default::default()
+        })
+        .insert(CollectibleAbilityTrigger::new::<PlayerDash>(
+            Vec2::new(40.0, 600.0),
+            Vec3::new(0.0, 0.0, 0.0),
+        ));
 }
 
 fn add_initial_room(commands: &mut Commands, map: &Map, assets: &mut Assets<Image>) {
@@ -108,12 +144,13 @@ fn add_player(commands: &mut Commands, assets: &mut Assets<Image>) {
         })
         .insert(FollowedByCamera)
         .insert(PlayerMovement::new())
-        .insert(PlayerShoot::default())
+        // .insert(PlayerShoot::default())
         .insert(Gravity::new())
         .insert(VelocityMap::new())
-        .insert(PlayerDash::default())
-        .insert(PlayerInventory::new_with::<PlayerShoot, PlayerDash>())
-        .insert(MovableCollider {
+        // .insert(PlayerDash::default())
+        .insert(PlayerInventory::new())
+        // .insert(PlayerInventory::new_with::<PlayerShoot, PlayerDash>())
+        .insert(MoveableCollider {
             size: Vec2::splat(PLAYER_SIZE),
         });
 }
