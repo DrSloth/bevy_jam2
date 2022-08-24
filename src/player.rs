@@ -42,7 +42,7 @@ pub fn player_input_system(
     mut jump_event_writer: EventWriter<JumpEvent>,
     kb_input: ResMut<Input<KeyCode>>,
 ) {
-    const SPEED: f32 = 10.0;
+    const SPEED: f32 = 3.0;
 
     for (mut velocity_map, mut player, entity) in player_query.iter_mut() {
         let vel = if let Some(vel) = player.vel_id.and_then(|id| velocity_map.get_mut(id)) {
@@ -73,7 +73,7 @@ pub fn player_jump_system(
     mut player_query: Query<(&mut VelocityMap, &mut PlayerMovement, &Gravity)>,
     mut jump_event_reader: EventReader<JumpEvent>,
 ) {
-    const JUMP_POWER: f32 = 17.0;
+    const JUMP_POWER: f32 = 6.0;
 
     for JumpEvent(entity) in jump_event_reader.iter() {
         if let Ok((mut velocity_map, mut player_movement, grav)) = player_query.get_mut(*entity) {

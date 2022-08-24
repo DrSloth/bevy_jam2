@@ -70,7 +70,7 @@ pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<As
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
                 color: Color::rgb(1.0, 0.5, 0.0),
-                custom_size: Some(Vec2::new(20.0, 20.0)),
+                custom_size: Some(Vec2::splat(8.0)),
                 ..Default::default()
             },
             ..Default::default()
