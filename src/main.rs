@@ -10,7 +10,7 @@ mod player;
 mod util;
 
 use bevy::prelude::*;
-use crate::asset_loaders::maps;
+use crate::asset_loaders::{EmbeddedAssetLoader, EmbeddedAssets, maps};
 use crate::maps::Map;
 
 use collision::{Collider, CollisionEvent, MovableCollider};
@@ -55,17 +55,37 @@ pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<As
         ..Default::default()
     });
 
-    if let Err(e) = maps::load_room_sprites(&mut assets, &mut commands, &map, "tutorial", "room0") {
-        panic!("Could not load initial room: {}", e);
-    }
+    add_initial_room(&mut commands, &map, &mut assets);
+    add_player(&mut commands, &mut assets);
 
     commands
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
-                color: Color::rgb(1.0, 0.0, 0.0),
+                color: Color::rgb(1.0, 0.5, 0.0),
+                custom_size: Some(Vec2::new(20.0, 20.0)),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .insert(MouseCursor);
+}
+
+fn add_initial_room(commands: &mut Commands, map: &Map, assets: &mut Assets<Image>) {
+    if let Err(e) = maps::load_room_sprites(assets, commands, map, "tutorial", "room0") {
+        panic!("Could not load initial room: {}", e);
+    }
+}
+
+fn add_player(commands: &mut Commands, assets: &mut Assets<Image>) {
+    let texture = EmbeddedAssets::load_image_as_asset(assets, "sprites/character/movement/idle.png")
+        .unwrap_or_else(|e| panic!("The player sprite could not be loaded: {}", e));
+    commands
+        .spawn_bundle(SpriteBundle {
+            sprite: Sprite {
                 custom_size: Some(Vec2::splat(PLAYER_SIZE)),
                 ..Default::default()
             },
+            texture,
             transform: Transform {
                 translation: Vec3::new(1.0 * PLAYER_SIZE, 10.0 * PLAYER_SIZE, 0.0),
                 ..Default::default()
@@ -81,17 +101,6 @@ pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<As
         .insert(MovableCollider {
             size: Vec2::splat(PLAYER_SIZE),
         });
-
-    commands
-        .spawn_bundle(SpriteBundle {
-            sprite: Sprite {
-                color: Color::rgb(1.0, 0.5, 0.0),
-                custom_size: Some(Vec2::new(20.0, 20.0)),
-                ..Default::default()
-            },
-            ..Default::default()
-        })
-        .insert(MouseCursor);
 }
 
 fn grab_mouse(mut windows: ResMut<Windows>) {
