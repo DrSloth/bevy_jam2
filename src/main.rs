@@ -53,7 +53,7 @@ pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<As
     commands
         .spawn_bundle(Camera2dBundle {
             projection: OrthographicProjection {
-                scale: 0.5,
+                scale: 0.2,
                 ..Default::default()
             },
             ..Default::default()
