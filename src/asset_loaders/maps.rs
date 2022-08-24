@@ -1,14 +1,17 @@
-use crate::asset_loaders::{AssetLoadError, EmbeddedAssetLoader, EmbeddedAssets, EmbeddedData};
-use crate::Collider;
-use bevy::prelude::*;
-use bevy::utils::HashMap;
+use bevy::{prelude::*, utils::HashMap};
+use std::{
+    path::{Path, PathBuf},
+    string::FromUtf8Error,
+};
+
 use image::Rgba;
-use serde::de::DeserializeOwned;
-use serde::Deserialize;
-use std::ops::Rem;
-use std::path::{Path, PathBuf};
-use std::string::FromUtf8Error;
+use serde::{de::DeserializeOwned, Deserialize};
 use thiserror::Error;
+
+use crate::{
+    asset_loaders::{AssetLoadError, EmbeddedAssetLoader, EmbeddedAssets, EmbeddedData},
+    collision::Collider,
+};
 
 const TILE_SIZE: f32 = 8.0;
 
@@ -100,7 +103,7 @@ fn load_layer_file<P: AsRef<Path>>(
         let i: u32 = i
             .try_into()
             .unwrap_or_else(|e| panic!("Could not convert usize to u32: {}", e));
-        let x = i.rem(image.width());
+        let x = i.wrapping_rem(image.width());
         let y = image
             .height()
             .saturating_sub(i.saturating_div(image.width()));

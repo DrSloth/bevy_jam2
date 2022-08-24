@@ -1,14 +1,15 @@
 pub mod maps;
 
-use bevy::asset::{Assets, Handle};
-use bevy::prelude::*;
-use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
-use bevy::render::texture::ImageSampler;
-use image::io::Reader as ImageReader;
-use image::{DynamicImage, ImageBuffer, ImageFormat, Pixel, Rgba};
+use bevy::{
+    asset::{Assets, Handle},
+    prelude::*,
+    render::render_resource::{Extent3d, TextureDimension, TextureFormat},
+    render::texture::ImageSampler,
+};
+use std::{io::Cursor, path::Path};
+
+use image::{io::Reader as ImageReader, DynamicImage, ImageBuffer, ImageFormat, Pixel, Rgba};
 use rust_embed::RustEmbed;
-use std::io::Cursor;
-use std::path::Path;
 use thiserror::Error;
 
 #[derive(RustEmbed)]
