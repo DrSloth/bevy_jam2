@@ -3,6 +3,7 @@
 //! When the initial room could not be loaded
 
 mod asset_loaders;
+mod camera;
 mod collision;
 mod combat;
 mod physics;
@@ -19,6 +20,7 @@ use player::{
     abilities::{self, PlayerDash, PlayerInventory, PlayerShoot},
     JumpEvent, MouseCursor, PlayerMovement,
 };
+use camera::{FollowedByCamera, FollowEntity};
 
 const PLAYER_SIZE: f32 = 16.0;
 
@@ -27,6 +29,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup_system)
         .add_startup_system(grab_mouse)
+        .add_system(camera::camera_follow_system)
         .add_system(player::player_input_system)
         .add_system(player::player_jump_system)
         .add_system(player::player_land_system)
@@ -47,13 +50,15 @@ fn main() {
 
 /// Create the main game world
 pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<Assets<Image>>) {
-    commands.spawn_bundle(Camera2dBundle {
-        projection: OrthographicProjection {
-            scale: 0.5,
+    commands
+        .spawn_bundle(Camera2dBundle {
+            projection: OrthographicProjection {
+                scale: 0.5,
+                ..Default::default()
+            },
             ..Default::default()
-        },
-        ..Default::default()
-    });
+        })
+        .insert(FollowEntity);
 
     add_initial_room(&mut commands, &map, &mut assets);
     add_player(&mut commands, &mut assets);
@@ -87,11 +92,12 @@ fn add_player(commands: &mut Commands, assets: &mut Assets<Image>) {
             },
             texture,
             transform: Transform {
-                translation: Vec3::new(1.0 * PLAYER_SIZE, 10.0 * PLAYER_SIZE, 0.0),
+                translation: Vec3::new(1.0 * PLAYER_SIZE, 4.0 * PLAYER_SIZE, 0.0),
                 ..Default::default()
             },
             ..Default::default()
         })
+        .insert(FollowedByCamera)
         .insert(PlayerMovement::new())
         .insert(PlayerShoot::default())
         .insert(Gravity::new())
