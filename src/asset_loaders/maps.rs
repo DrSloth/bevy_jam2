@@ -39,8 +39,6 @@ pub fn map_as_resource(filename: &str) -> Map {
 pub enum LoadRoomError {
     #[error("The given section could not be found: {0}")]
     SectionNotFoundError(String),
-    #[error("The given room's assets could not be loaded: {0}")]
-    ParseError(AssetLoadError),
     #[error("The given room's config file could not be parsed: {0}")]
     RoomParseError(ParseError),
     #[error("Could not load layer: {0}")]
