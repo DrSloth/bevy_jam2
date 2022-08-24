@@ -1,3 +1,5 @@
+pub mod abilities;
+
 use bevy::{prelude::*, sprite::collide_aabb::Collision};
 
 use crate::{
@@ -12,7 +14,9 @@ pub struct JumpEvent(pub Entity);
 #[derive(Component, Debug)]
 pub struct PlayerMovement {
     pub(crate) vel_id: Option<VelocityId>,
+    //TODO maybe use a state machine
     can_jump: bool,
+    can_move: bool,
 }
 
 impl Default for PlayerMovement {
@@ -20,6 +24,7 @@ impl Default for PlayerMovement {
         Self {
             vel_id: None,
             can_jump: true,
+            can_move: true,
         }
     }
 }
@@ -48,6 +53,10 @@ pub fn player_input_system(
             vel
         };
 
+        if !player.can_move {
+            continue;
+        }
+
         vel.x = 0.0;
         for key in kb_input.get_pressed() {
             match key {
@@ -64,7 +73,7 @@ pub fn player_jump_system(
     mut player_query: Query<(&mut VelocityMap, &mut PlayerMovement, &Gravity)>,
     mut jump_event_reader: EventReader<JumpEvent>,
 ) {
-    const JUMP_POWER: f32 = 24.0;
+    const JUMP_POWER: f32 = 17.0;
 
     for JumpEvent(entity) in jump_event_reader.iter() {
         if let Ok((mut velocity_map, mut player_movement, grav)) = player_query.get_mut(*entity) {
@@ -111,8 +120,10 @@ fn is_falling(grav: &Gravity, vel_map: &VelocityMap) -> bool {
         .map_or(true, |v| v.y < -(GRAVITY * 3.0))
 }
 
-// Makes the player slow down while falling
+/// Makes the player slow down while falling
 pub fn player_fall_system(mut player_query: Query<(&mut VelocityMap, &PlayerMovement, &Gravity)>) {
+    const PLAYER_FALL_MULTIPLIER: f32 = 1.3;
+
     for (mut velocity_map, player, grav) in player_query.iter_mut() {
         if let (Some(player_id), Some(grav_id)) = (player.vel_id, *grav.vel_id()) {
             if let (Some(mut player_vel), Some(mut gravity_vel)) = (
@@ -124,11 +135,48 @@ pub fn player_fall_system(mut player_query: Query<(&mut VelocityMap, &PlayerMove
                     gravity_vel = Vec2::ZERO;
                 } else if gravity_vel.y < -GRAVITY {
                     // TODO maybe this should be a gravity scale in the gravity component
-                    gravity_vel.y -= GRAVITY * 2.0;
+                    gravity_vel.y -= GRAVITY * PLAYER_FALL_MULTIPLIER;
                 }
 
                 velocity_map.set(player_id, player_vel);
                 velocity_map.set(grav_id, gravity_vel);
+            }
+        }
+    }
+}
+
+#[derive(Component, Debug)]
+pub struct MouseCursor;
+
+/// Moves the cursor
+pub fn move_cursor_system(
+    mut cursor_query: Query<&mut Transform, With<MouseCursor>>,
+    camera_query: Query<(&Camera, &GlobalTransform)>,
+    windows: Res<Windows>,
+) {
+    for mut cursor_transform in cursor_query.iter_mut() {
+        match camera_query.get_single() {
+            Ok((camera, camera_transform)) => {
+                let win = windows.get_primary().unwrap_or_else(|| panic!("No window"));
+                if let Some(cursor_pos) = win.cursor_position() {
+                    let window_size = Vec2::new(win.height(), win.height());
+                    let ndc = (cursor_pos / window_size) * 2.0 - Vec2::ONE;
+                    let ndc_to_world =
+                        camera_transform.compute_matrix() * camera.projection_matrix().inverse();
+                    let world_pos = {
+                        let mut world_pos = ndc_to_world.project_point3(ndc.extend(-1.0));
+                        world_pos.z = 0.0;
+                        world_pos
+                    };
+
+                    cursor_transform.translation = world_pos;
+                }
+            }
+            Err(e) => {
+                panic!(
+                    "Multiple Cameras active, only one camera may be active at a time: {}",
+                    e
+                );
             }
         }
     }

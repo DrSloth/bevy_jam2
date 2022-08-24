@@ -2,7 +2,7 @@ use bevy::{prelude::*, sprite::collide_aabb::Collision};
 
 use crate::collision::{CollisionEvent, MovableCollider};
 
-pub const GRAVITY: f32 = 1.9;
+pub const GRAVITY: f32 = 0.9;
 pub const GRAVITY_MAX: f32 = -22.0;
 
 /// An id to a velocity inside a velocity map
@@ -63,11 +63,8 @@ impl VelocityMap {
 pub fn velocity_system(mut query: Query<(&mut Transform, &mut VelocityMap)>) {
     for (mut transform, mut velocity_map) in query.iter_mut() {
         let velocity: Vec2 = velocity_map.map.iter().sum();
-        transform.translation = Vec3::new(
-            transform.translation.x + velocity.x,
-            transform.translation.y + velocity.y,
-            transform.translation.z,
-        );
+        let z = transform.translation.z;
+        transform.translation += velocity.extend(z);
         velocity_map.last_velocity = velocity;
     }
 }
@@ -75,7 +72,7 @@ pub fn velocity_system(mut query: Query<(&mut Transform, &mut VelocityMap)>) {
 /// Gravity component to make things fall
 #[derive(Component, Debug, Default)]
 pub struct Gravity {
-    vel_id: Option<VelocityId>,
+    pub(crate) vel_id: Option<VelocityId>,
 }
 
 impl Gravity {
