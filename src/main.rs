@@ -13,12 +13,12 @@ mod physics;
 mod player;
 mod util;
 
-use crate::asset_loaders::{maps, EmbeddedAssetLoader, EmbeddedAssets};
-use crate::maps::Map;
 use bevy::prelude::*;
 
+use asset_loaders::{maps, EmbeddedAssetLoader, EmbeddedAssets};
 use camera::{FollowEntity, FollowedByCamera};
 use collision::{Collider, CollisionEvent, MovableCollider};
+use maps::Map;
 use physics::{Gravity, VelocityMap};
 use player::{
     abilities::{self, PlayerDash, PlayerInventory, PlayerShoot},
