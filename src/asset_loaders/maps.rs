@@ -1,10 +1,9 @@
-use std::ops::Index;
 use serde::Deserialize;
 use std::path::{Path, PathBuf};
 use std::string::FromUtf8Error;
 use bevy::prelude::*;
 use bevy::utils::HashMap;
-use image::{ImageBuffer, Rgba};
+use image::Rgba;
 use serde::de::DeserializeOwned;
 use thiserror::Error;
 use crate::asset_loaders::{AssetLoadError, EmbeddedAssetLoader, EmbeddedAssets, EmbeddedData};
