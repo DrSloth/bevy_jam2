@@ -1,3 +1,6 @@
+// Allow very complex types for bevy queries
+#![allow(clippy::type_complexity)]
+
 //! Game submission for the second bevy jam
 //! # Panics
 //! When the initial room could not be loaded

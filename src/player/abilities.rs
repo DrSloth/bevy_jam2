@@ -7,7 +7,7 @@ use crate::{
     physics::{Gravity, VelocityMap},
 };
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct AbilityId(TypeId);
 
 pub trait Ability: Component + Sized + 'static {

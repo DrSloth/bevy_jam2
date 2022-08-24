@@ -1,3 +1,4 @@
+use std::ops::Rem;
 use serde::Deserialize;
 use std::path::{Path, PathBuf};
 use std::string::FromUtf8Error;
@@ -9,7 +10,7 @@ use thiserror::Error;
 use crate::asset_loaders::{AssetLoadError, EmbeddedAssetLoader, EmbeddedAssets, EmbeddedData};
 use crate::Collider;
 
-const TILE_SIZE: usize = 8;
+const TILE_SIZE: f32 = 8.0;
 
 #[derive(Deserialize)]
 pub struct Map {
@@ -83,13 +84,15 @@ fn load_layer_file<P: AsRef<Path>>(assets: &mut Assets<Image>, commands: &mut Co
     let image = EmbeddedData::load_image::<P, Rgba<u8>>(path)
         .map_err(LoadLayerError::LoadError)?;
     for (i, pixel) in image.pixels().enumerate() {
-        let x = i % image.width() as usize;
-        let y = image.height() as usize - (i / image.width() as usize);
+        let i: u32 = i.try_into().unwrap_or_else(|e| panic!("Could not convert usize to u32: {}", e));
+        let x = i.rem(image.width());
+        let y = image.height().saturating_sub(i.saturating_div(image.width()));
         if pixel.0[3] != 0 {
             let color_hex = format!("#{}", hex::encode(pixel.0.into_iter().take(3).collect::<Vec<u8>>()));
             let sprite_id = room.colors.get(&color_hex).ok_or(LoadLayerError::InvalidColor(color_hex))?;
-            let sprite_path = map.sprites.get(sprite_id).ok_or(LoadLayerError::InvalidSprite(sprite_id.to_string()))?;
-            let size = Vec2::splat(TILE_SIZE as f32);
+            let sprite_path = map.sprites.get(sprite_id).ok_or_else(|| LoadLayerError::InvalidSprite(sprite_id.to_string()))?;
+            let size = Vec2::splat(TILE_SIZE);
+            #[allow(clippy::cast_precision_loss)]
             commands.spawn_bundle(SpriteBundle {
                 // TODO: Optimize: Reuse already loaded assets by saving handles
                 texture: EmbeddedAssets::load_image_as_asset(assets, sprite_path).map_err(LoadLayerError::LoadError)?,
@@ -98,7 +101,7 @@ fn load_layer_file<P: AsRef<Path>>(assets: &mut Assets<Image>, commands: &mut Co
                     ..Default::default()
                 },
                 transform: Transform {
-                    translation: Vec3::new((x * TILE_SIZE) as f32, (y * TILE_SIZE) as f32, 0.0),
+                    translation: Vec3::new((x as f32) * TILE_SIZE, (y as f32) * TILE_SIZE, 0.0),
                     ..Default::default()
                 },
                 ..Default::default()
