@@ -20,6 +20,8 @@ use player::{
     JumpEvent, MouseCursor, PlayerMovement,
 };
 
+const PLAYER_SIZE: f32 = 16.0;
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -45,7 +47,13 @@ fn main() {
 
 /// Create the main game world
 pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<Assets<Image>>) {
-    commands.spawn_bundle(Camera2dBundle::default());
+    commands.spawn_bundle(Camera2dBundle {
+        projection: OrthographicProjection {
+            scale: 0.5,
+            ..Default::default()
+        },
+        ..Default::default()
+    });
 
     if let Err(e) = maps::load_room_sprites(&mut assets, &mut commands, &map, "tutorial", "room0") {
         panic!("Could not load initial room: {}", e);
@@ -55,7 +63,11 @@ pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<As
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
                 color: Color::rgb(1.0, 0.0, 0.0),
-                custom_size: Some(Vec2::new(50.0, 50.0)),
+                custom_size: Some(Vec2::splat(PLAYER_SIZE)),
+                ..Default::default()
+            },
+            transform: Transform {
+                translation: Vec3::new(1.0 * PLAYER_SIZE, 10.0 * PLAYER_SIZE, 0.0),
                 ..Default::default()
             },
             ..Default::default()
@@ -67,29 +79,8 @@ pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<As
         .insert(PlayerDash::default())
         .insert(PlayerInventory::new_with::<PlayerShoot, PlayerDash>())
         .insert(MovableCollider {
-            size: Vec2::new(50.0, 50.0),
+            size: Vec2::splat(PLAYER_SIZE),
         });
-
-    spawn_ground(
-        &mut commands,
-        Transform::from_xyz(0.0, -200.0, 0.0),
-        Vec2::new(600.0, 35.0),
-    );
-    spawn_ground(
-        &mut commands,
-        Transform::from_xyz(0.0, 400.0, 0.0),
-        Vec2::new(600.0, 35.0),
-    );
-    spawn_ground(
-        &mut commands,
-        Transform::from_xyz(300.0, 0.0, 0.0),
-        Vec2::new(55.0, 600.0),
-    );
-    spawn_ground(
-        &mut commands,
-        Transform::from_xyz(-300.0, 0.0, 0.0),
-        Vec2::new(55.0, 600.0),
-    );
 
     commands
         .spawn_bundle(SpriteBundle {
@@ -101,20 +92,6 @@ pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<As
             ..Default::default()
         })
         .insert(MouseCursor);
-}
-
-fn spawn_ground(commands: &mut Commands, transform: Transform, size: Vec2) {
-    commands
-        .spawn_bundle(SpriteBundle {
-            sprite: Sprite {
-                color: Color::rgb(0.0, 0.0, 0.0),
-                custom_size: Some(size),
-                ..Default::default()
-            },
-            transform,
-            ..Default::default()
-        })
-        .insert(Collider { size });
 }
 
 fn grab_mouse(mut windows: ResMut<Windows>) {

@@ -7,6 +7,9 @@ use image::Rgba;
 use serde::de::DeserializeOwned;
 use thiserror::Error;
 use crate::asset_loaders::{AssetLoadError, EmbeddedAssetLoader, EmbeddedAssets, EmbeddedData};
+use crate::Collider;
+
+const TILE_SIZE: usize = 8;
 
 #[derive(Deserialize)]
 pub struct Map {
@@ -78,23 +81,25 @@ fn load_layer_file<P: AsRef<Path>>(assets: &mut Assets<Image>, commands: &mut Co
         .map_err(LoadLayerError::LoadError)?;
     for (i, pixel) in image.pixels().enumerate() {
         let x = i % image.width() as usize;
-        let y = i / image.width() as usize;
+        let y = image.height() as usize - (i / image.width() as usize);
         if pixel.0[3] != 0 {
             let color_hex = format!("#{}", hex::encode(pixel.0.into_iter().take(3).collect::<Vec<u8>>()));
             let sprite_id = room.colors.get(&color_hex).ok_or_else(|| LoadLayerError::InvalidColor(color_hex))?;
             let sprite_path = map.sprites.get(sprite_id).ok_or_else(|| LoadLayerError::InvalidSprite(sprite_id.to_string()))?;
+            let size = Vec2::splat(TILE_SIZE as f32);
             commands.spawn_bundle(SpriteBundle {
                 texture: EmbeddedAssets::load_image_as_asset(assets, sprite_path).map_err(LoadLayerError::LoadError)?,
                 sprite: Sprite {
-                    custom_size: Some(Vec2::new(128.0, 128.0)),
+                    custom_size: Some(size),
+                    ..Default::default()
+                },
+                transform: Transform {
+                    translation: Vec3::new((x * TILE_SIZE) as f32, (y * TILE_SIZE) as f32, 0.0),
                     ..Default::default()
                 },
                 ..Default::default()
             })
-                .insert(Transform {
-                    translation: Vec3::new((x * 128) as f32, (y * 128) as f32, 0.0),
-                    ..Default::default()
-                });
+                .insert(Collider { size });
         }
     }
     Ok(())
