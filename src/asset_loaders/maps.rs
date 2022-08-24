@@ -26,7 +26,10 @@ pub struct Section {
 pub struct Room {
     layers: u32,
     colors: HashMap<String, String>,
-    connections: HashMap<String, String>,
+
+    // TODO: Implement connections
+    #[serde(rename = "connections")]
+    _connections: HashMap<String, String>,
 }
 
 pub fn map_as_resource(filename: &str) -> Map {
@@ -88,6 +91,7 @@ fn load_layer_file<P: AsRef<Path>>(assets: &mut Assets<Image>, commands: &mut Co
             let sprite_path = map.sprites.get(sprite_id).ok_or_else(|| LoadLayerError::InvalidSprite(sprite_id.to_string()))?;
             let size = Vec2::splat(TILE_SIZE as f32);
             commands.spawn_bundle(SpriteBundle {
+                // TODO: Optimize: Reuse already loaded assets by saving handles
                 texture: EmbeddedAssets::load_image_as_asset(assets, sprite_path).map_err(LoadLayerError::LoadError)?,
                 sprite: Sprite {
                     custom_size: Some(size),

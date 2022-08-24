@@ -70,7 +70,6 @@ impl<T: RustEmbed> EmbeddedAssetLoader for T {
             Cursor::new(Self::load(path)?)
         );
         image.set_format(ImageFormat::Png);
-        // Ok(image.decode().map_err(|_| AssetLoadError::DecodeImageError)?.conv())
         Ok(I::conv(image.decode().map_err(|_| AssetLoadError::DecodeImageError)?))
     }
 }
