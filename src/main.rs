@@ -21,9 +21,7 @@ use collision::CollisionEvent;
 use maps::Map;
 use physics::PhysicsPlugin;
 use player::{
-    abilities::{
-        collectibles::CollectibleAbilityTrigger, PlayerDash, PlayerShoot,
-    },
+    abilities::{collectibles::CollectibleAbilityTrigger, PlayerDash, PlayerShoot},
     MouseCursor, PlayerPlugin,
 };
 
@@ -38,8 +36,8 @@ fn main() {
         .add_startup_system(grab_mouse)
         .add_system(combat::move_projectile_system)
         .add_system(camera::camera_follow_system)
-                .add_system(collision::collision_system)
-                .add_event::<CollisionEvent>()
+        .add_system(collision::collision_system)
+        .add_event::<CollisionEvent>()
         .insert_resource(maps::map_as_resource("maps/main.toml"))
         .run();
 }

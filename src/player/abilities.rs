@@ -220,4 +220,3 @@ pub fn player_shoot_system(
         }
     }
 }
-

@@ -4,10 +4,7 @@ use bevy::{
     asset::{Assets, Handle},
     prelude::*,
     render::texture::ImageSampler,
-    render::{
-        // render_resource::{Extent3d, TextureDimension, TextureFormat},
-        texture::{CompressedImageFormats, ImageType},
-    },
+    render::texture::{CompressedImageFormats, ImageType},
 };
 use std::{io::Cursor, path::Path};
 
