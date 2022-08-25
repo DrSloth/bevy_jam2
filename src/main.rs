@@ -76,7 +76,12 @@ pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<As
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
                 color: Color::rgb(1.0, 0.5, 0.0),
-                custom_size: Some(Vec2::new(2.0, 2.0)),
+                custom_size: Some(Vec2::splat(2.0)),
+                ..Default::default()
+            },
+            transform: Transform {
+                // Always be in front of player
+                translation: Vec3::new(0.0, 0.0, 1.0),
                 ..Default::default()
             },
             ..Default::default()
