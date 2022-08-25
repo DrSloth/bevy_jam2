@@ -2,6 +2,59 @@
 brick = "sprites/world/tileset/solid_brick.png"
 cracked_brick = "sprites/world/tileset/cracked_brick.png"
 platform = "sprites/world/tileset/platform.png"
+fire_item = "sprites/items/fire.png"
+earth_item = "sprites/items/earth.png"
+
+[sprites.border_edge_z0]
+sprite = "sprites/world/tileset/border_edge.png"
+zrot = 0
+
+[sprites.border_edge_z90]
+sprite = "sprites/world/tileset/border_edge.png"
+zrot = 90
+
+[sprites.border_edge_z180]
+sprite = "sprites/world/tileset/border_edge.png"
+zrot = 180
+
+[sprites.border_edge_z270]
+sprite = "sprites/world/tileset/border_edge.png"
+zrot = 270
+
+
+[sprites.border_corner_z0]
+border_corner = "sprites/world/tileset/border_corner.png"
+zrot = 0
+
+[sprites.border_corner_z90]
+border_corner = "sprites/world/tileset/border_corner.png"
+zrot = 90
+
+[sprites.border_corner_z180]
+border_corner = "sprites/world/tileset/border_corner.png"
+zrot = 180
+
+[sprites.border_corner_z270]
+border_corner = "sprites/world/tileset/border_corner.png"
+zrot = 270
+
+
+[sprites.border_inner_corner_z0]
+border_corner = "sprites/world/tileset/border_inner_corner.png"
+zrot = 0
+
+[sprites.border_inner_corner_z90]
+border_corner = "sprites/world/tileset/border_inner_corner.png"
+zrot = 90
+
+[sprites.border_inner_corner_z180]
+border_corner = "sprites/world/tileset/border_inner_corner.png"
+zrot = 180
+
+[sprites.border_inner_corner_z270]
+border_corner = "sprites/world/tileset/border_inner_corner.png"
+zrot = 270
+
 
 [sections.tutorial]
 base_dir = "maps/sections/tutorial/"
