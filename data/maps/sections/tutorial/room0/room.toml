@@ -1,7 +1,9 @@
 layers = 1
 
 [colors]
-"#ffffff" = "wall"
+"#ffffff" = "brick"
+"#ffffcc" = "cracked_brick"
+"#ffff88" = "platform"
 
 [connections]
 room1 = "#ff0000"
