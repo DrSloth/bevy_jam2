@@ -118,22 +118,17 @@ fn load_layer_file<P: AsRef<Path>>(
             .height()
             .saturating_sub(i.saturating_div(image.width()));
         if pixel.0[3] != 0 {
-            let color_hex = format!(
-                "#{:x}{:x}{:x}",
-                pixel.0[0],
-                pixel.0[1],
-                pixel.0[2]
-            );
+            let color_hex = format!("#{:x}{:x}{:x}", pixel.0[0], pixel.0[1], pixel.0[2]);
             let sprite_id = room
                 .colors
                 .get(&color_hex)
                 .ok_or(LoadLayerError::InvalidColor(color_hex))?;
-            
+
             let sprite_config = map
                 .sprites
                 .get(sprite_id)
                 .ok_or_else(|| LoadLayerError::InvalidSprite(sprite_id.to_string()))?;
-            
+
             let size = Vec2::splat(TILE_SIZE);
             #[allow(clippy::cast_precision_loss)]
             commands

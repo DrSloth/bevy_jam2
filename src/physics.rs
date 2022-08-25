@@ -140,8 +140,10 @@ pub fn landing_system(
 fn add_gravity_velocity_system(mut query: Query<(&mut VelocityMap, &Gravity)>) {
     for (mut vel_map, grav) in query.iter_mut() {
         if let Err(e) = vel_map.set(grav.vel_id, grav.velocity) {
-            panic!("{} -> Gravity velocity not inside map, you forgot to register it", e);
-        } 
+            panic!(
+                "{} -> Gravity velocity not inside map, you forgot to register it",
+                e
+            );
+        }
     }
 }
-
