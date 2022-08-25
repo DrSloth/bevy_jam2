@@ -16,11 +16,15 @@ layers = 2
 "#ff4444" = "border_inner_corner_z90"
 "#ff4488" = "border_inner_corner_z180"
 "#ff44bb" = "border_inner_corner_z270"
-"#00ee00" = "earth_item" #item=earth
-"#ee0000" = "fire_item" #item=fire
-"#ee0000" = "fire_item" #item=fire
-"#ee0000" = "fire_item" #item=fire
-"#ee0000" = "fire_item" #item=fire
+"#00ee00" = "earth_item"
+"#ee0000" = "fire_item"
+"#ee0000" = "fire_item"
+"#ee0000" = "fire_item"
+"#ee0000" = "fire_item"
+"#dd0000" = "checkpoint0"
+"#dd0010" = "checkpoint1"
+"#dd0020" = "checkpoint2"
+"#dd0030" = "checkpoint3"
 
 [connections]
 room1 = "#ff0000"
