@@ -90,7 +90,7 @@ pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<As
                 custom_size: Some(Vec2::new(4.0, 4.0)),
                 ..Default::default()
             },
-            transform: Transform::from_xyz(38.0, 55.0, 0.0),
+            transform: Transform::from_xyz(58.0, 55.0, 0.0),
             ..Default::default()
         })
         .insert(CollectibleAbilityTrigger::new::<PlayerShoot>(
