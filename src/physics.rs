@@ -3,8 +3,8 @@ use bevy::{prelude::*, sprite::collide_aabb::Collision};
 use crate::collision::{CollisionEvent, MoveableCollider};
 
 pub const VEL_SYSTEM_STAGE: &str = "vel_sys";
-pub const GRAVITY: f32 = 0.07;
-pub const GRAVITY_MAX: f32 = -9.0;
+pub const GRAVITY: f32 = 1.0;
+pub const GRAVITY_MAX: f32 = -8.7;
 
 #[derive(Debug)]
 pub struct PhysicsPlugin;
@@ -140,10 +140,8 @@ pub fn landing_system(
 fn add_gravity_velocity_system(mut query: Query<(&mut VelocityMap, &Gravity)>) {
     for (mut vel_map, grav) in query.iter_mut() {
         if let Err(e) = vel_map.set(grav.vel_id, grav.velocity) {
-            panic!(
-                "{} -> Gravity velocity not inside map, you forgot to register it",
-                e
-            );
-        }
+            panic!("{} -> Gravity velocity not inside map, you forgot to register it", e);
+        } 
     }
 }
+

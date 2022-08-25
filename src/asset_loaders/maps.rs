@@ -16,18 +16,25 @@ use crate::{
 
 const TILE_SIZE: f32 = 8.0;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct Map {
-    sprites: HashMap<String, PathBuf>,
+    sprites: HashMap<String, SpriteConfig>,
     sections: HashMap<String, Section>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
+pub struct SpriteConfig {
+    path: PathBuf,
+    #[serde(default)]
+    zrot: i16,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct Section {
     base_dir: PathBuf,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct Room {
     layers: u32,
     colors: HashMap<String, String>,
@@ -38,7 +45,7 @@ pub struct Room {
 }
 
 pub fn map_as_resource(filename: &str) -> Map {
-    match load_toml::<Map, &str>(filename) {
+    match load_toml(filename) {
         Ok(map) => map,
         Err(e) => {
             panic!("There was an error parsing the map: {}", e);
@@ -112,23 +119,27 @@ fn load_layer_file<P: AsRef<Path>>(
             .saturating_sub(i.saturating_div(image.width()));
         if pixel.0[3] != 0 {
             let color_hex = format!(
-                "#{}",
-                hex::encode(pixel.0.into_iter().take(3).collect::<Vec<u8>>())
+                "#{:x}{:x}{:x}",
+                pixel.0[0],
+                pixel.0[1],
+                pixel.0[2]
             );
             let sprite_id = room
                 .colors
                 .get(&color_hex)
                 .ok_or(LoadLayerError::InvalidColor(color_hex))?;
-            let sprite_path = map
+            
+            let sprite_config = map
                 .sprites
                 .get(sprite_id)
                 .ok_or_else(|| LoadLayerError::InvalidSprite(sprite_id.to_string()))?;
+            
             let size = Vec2::splat(TILE_SIZE);
             #[allow(clippy::cast_precision_loss)]
             commands
                 .spawn_bundle(SpriteBundle {
                     // TODO: Optimize: Reuse already loaded assets by saving handles
-                    texture: EmbeddedAssets::load_image_as_asset(assets, sprite_path)
+                    texture: EmbeddedAssets::load_image_as_asset(assets, &sprite_config.path)
                         .map_err(LoadLayerError::LoadError)?,
                     sprite: Sprite {
                         custom_size: Some(size),
@@ -140,6 +151,7 @@ fn load_layer_file<P: AsRef<Path>>(
                             (y as f32) * TILE_SIZE,
                             0.0 - (room.layers.saturating_sub(layer_n) as f32),
                         ),
+                        rotation: Quat::from_axis_angle(Vec3::Z, f32::from(sprite_config.zrot)),
                         ..Default::default()
                     },
                     ..Default::default()

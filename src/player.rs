@@ -119,7 +119,7 @@ pub fn player_jump_system(
     mut player_query: Query<(&VelocityMap, &mut PlayerMovement, &Gravity)>,
     mut jump_event_reader: EventReader<JumpEvent>,
 ) {
-    const JUMP_POWER: f32 = 1.2;
+    const JUMP_POWER: f32 = 7.5;
 
     for JumpEvent(entity) in jump_event_reader.iter() {
         if let Ok((vel_map, mut player_movement, grav)) = player_query.get_mut(*entity) {
@@ -165,7 +165,7 @@ fn grav_is_falling(grav: &Gravity, vel_map: &VelocityMap) -> bool {
 
 /// Makes the player slow down while falling
 pub fn player_fall_system(mut player_query: Query<(&mut PlayerMovement, &mut Gravity)>) {
-    const PLAYER_FALL_MULTIPLIER: f32 = 1.3;
+    const PLAYER_FALL_MULTIPLIER: f32 = 1.2;
 
     for (mut player, mut gravity) in player_query.iter_mut() {
         if player.velocity.y > 0.0 {
