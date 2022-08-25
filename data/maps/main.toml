@@ -1,5 +1,7 @@
 [sprites]
 wall = "sprites/world/tileset/solid_brick.png"
+cracked_wall = "sprites/world/tileset/cracked_brick.png"
+platform = "sprites/world/tileset/platform.png"
 
 [sections.tutorial]
 base_dir = "maps/sections/tutorial/"
