@@ -1,3 +1,5 @@
+sections = { tutorial = "maps/sections/tutorial/" }
+
 [sprites]
 [sprites.brick]
 sprite = "sprites/world/tileset/solid_brick.png"
@@ -96,5 +98,3 @@ sprite = "sprites/enemies/ghost.png"
 [sprites.connection_down]
 [sprites.connection_left]
 
-[sections.tutorial]
-base_dir = "maps/sections/tutorial/"

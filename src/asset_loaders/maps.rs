@@ -2,7 +2,6 @@ use bevy::{prelude::*, utils::HashMap};
 use std::{
     ops::Rem,
     path::{Path, PathBuf},
-    string::FromUtf8Error,
 };
 
 use image::Rgba;
@@ -19,7 +18,7 @@ const TILE_SIZE: f32 = 8.0;
 #[derive(Deserialize, Debug)]
 pub struct Map {
     sprites: HashMap<String, TileConfig>,
-    sections: HashMap<String, Section>,
+    sections: HashMap<String, PathBuf>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -33,7 +32,7 @@ pub struct TileConfig {
 
 #[derive(Deserialize, Debug)]
 pub struct Section {
-    base_dir: PathBuf,
+    colors: HashMap<String, String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -41,7 +40,6 @@ pub struct Room {
     layers: Vec<String>,
     #[serde(default)]
     variations: Vec<Vec<String>>,
-    colors: HashMap<String, String>,
     // TODO: Implement connections
     // #[serde(rename = "connections")]
     // _connections: HashMap<String, String>,
@@ -74,8 +72,10 @@ pub fn load_room_sprites(
     room_id: &str,
     variation_id: Option<usize>,
 ) -> Result<(), LoadRoomError> {
-    if let Some((_, sec)) = map.sections.iter().find(|(s, _)| *s == section_id) {
-        let room: Room = load_toml(sec.base_dir.join(room_id).join("room.toml"))
+    if let Some((_, section_path)) = map.sections.iter().find(|(s, _)| *s == section_id) {
+        let section: Section =
+            load_toml(section_path.join("section.toml")).map_err(LoadRoomError::RoomParseError)?;
+        let room: Room = load_toml(section_path.join(room_id).join("room.toml"))
             .map_err(LoadRoomError::RoomParseError)?;
 
         let variation_iter = variation_id.iter().flat_map(|id| {
@@ -91,9 +91,10 @@ pub fn load_room_sprites(
                 assets,
                 commands,
                 map,
-                &room,
+                &section.colors,
+                // &room,
                 idx,
-                sec.base_dir.join(room_id).join(layer),
+                section_path.join(room_id).join(layer),
             )
             .map_err(LoadRoomError::LoadLayerError)?;
         }
@@ -117,7 +118,8 @@ fn load_layer_file<P: AsRef<Path>>(
     assets: &mut Assets<Image>,
     commands: &mut Commands,
     map: &Map,
-    room: &Room,
+    colors: &HashMap<String, String>,
+    // room: &Room,
     layer_idx: i16,
     layer_path: P,
 ) -> Result<(), LoadLayerError> {
@@ -133,8 +135,7 @@ fn load_layer_file<P: AsRef<Path>>(
             .saturating_sub(i.saturating_div(image.width()));
         if pixel.0[3] != 0 {
             let color_hex = format!("#{:02x}{:02x}{:02x}", pixel.0[0], pixel.0[1], pixel.0[2]);
-            let sprite_id = room
-                .colors
+            let sprite_id = colors
                 .get(&color_hex)
                 .ok_or(LoadLayerError::InvalidColor(color_hex))?;
 
@@ -185,8 +186,6 @@ fn load_layer_file<P: AsRef<Path>>(
 pub enum TomlParseError {
     #[error("Failed to load file: {0}")]
     LoadError(AssetLoadError),
-    #[error("Failed to parse file as UTF-8: {0}")]
-    ParseFileError(FromUtf8Error),
     #[error("Failed to parse file as TOML: {0}")]
     ParseError(toml::de::Error),
 }
@@ -194,6 +193,5 @@ pub enum TomlParseError {
 fn load_toml<T: DeserializeOwned, P: AsRef<Path>>(path: P) -> Result<T, TomlParseError> {
     EmbeddedData::load(path)
         .map_err(TomlParseError::LoadError)
-        .and_then(|data| String::from_utf8(data).map_err(TomlParseError::ParseFileError))
-        .and_then(|s| toml::from_str(&s).map_err(TomlParseError::ParseError))
+        .and_then(|data| toml::from_slice(&data).map_err(TomlParseError::ParseError))
 }
