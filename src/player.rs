@@ -147,7 +147,7 @@ pub fn player_land_system(
     for collision in collision_event_reader.iter() {
         if let Collision::Top = collision.collision {
             if let Ok((mut player, grav, vel_map)) = player_query.get_mut(collision.entity) {
-                let player_y_speed = player_vel.y.abs();
+                let player_y_speed = player.velocity.y.abs();
 
                 if let Some(grav_vel) = vel_map.get(grav.vel_id) {
                     if !is_falling(grav_vel.y) && player_y_speed < GRAVITY && !player.can_jump {
