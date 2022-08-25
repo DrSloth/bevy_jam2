@@ -58,13 +58,13 @@ zrot = 270
 [sprites.checkpoint0]
 sprite = "sprites/world/checkpoint/checkpoint0.png"
 
-[sprites.checkpoint0]
+[sprites.checkpoint1]
 sprite = "sprites/world/checkpoint/checkpoint1.png"
 
-[sprites.checkpoint0]
+[sprites.checkpoint2]
 sprite = "sprites/world/checkpoint/checkpoint2.png"
 
-[sprites.checkpoint0]
+[sprites.checkpoint3]
 sprite = "sprites/world/checkpoint/checkpoint3.png"
 
 
