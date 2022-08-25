@@ -1,9 +1,14 @@
 [sprites]
-brick = { sprite = "sprites/world/tileset/solid_brick.png"}
-cracked_brick = { sprite = "sprites/world/tileset/cracked_brick.png"}
-platform =  { sprite = "sprites/world/tileset/platform.png"}
-fire_item =  { sprite = "sprites/items/fire.png"}
-earth_item =  { sprite = "sprites/items/earth.png"}
+[sprites.brick]
+sprite = "sprites/world/tileset/solid_brick.png"
+
+[sprites.cracked_brick]
+sprite = "sprites/world/tileset/cracked_brick.png"
+breakable = true
+
+[sprites.platform]
+sprite = "sprites/world/tileset/platform.png"
+
 
 [sprites.border_edge_z0]
 sprite = "sprites/world/tileset/border_edge.png"
@@ -68,6 +73,14 @@ sprite = "sprites/world/checkpoint/checkpoint2.png"
 [sprites.checkpoint3]
 sprite = "sprites/world/checkpoint/checkpoint3.png"
 
+[sprites.earth_item]
+sprite = "sprites/items/earth.png"
+
+[sprites.fire_item]
+sprite = "sprites/items/fire.png"
+
+[sprites.water_item]
+sprite = "sprites/items/water.png"
 
 [sprites.slime_enemy]
 sprite = "sprites/enemies/slime.png"
@@ -78,6 +91,10 @@ sprite = "sprites/enemies/skeleton.png"
 [sprites.ghost_enemy]
 sprite = "sprites/enemies/ghost.png"
 
+[sprites.connection_up]
+[sprites.connection_right]
+[sprites.connection_down]
+[sprites.connection_left]
 
 [sections.tutorial]
 base_dir = "maps/sections/tutorial/"
