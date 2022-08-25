@@ -1,4 +1,4 @@
-layers = 2
+layers = ["borders.png", "bricks.png", "connections.png"]
 
 [colors]
 "#ffffff" = "brick"
@@ -16,11 +16,9 @@ layers = 2
 "#ff4444" = "border_inner_corner_z90"
 "#ff4488" = "border_inner_corner_z180"
 "#ff44bb" = "border_inner_corner_z270"
-"#00ee00" = "earth_item"
-"#ee0000" = "fire_item"
-"#ee0000" = "fire_item"
-"#ee0000" = "fire_item"
-"#ee0000" = "fire_item"
+"#ee0000" = "earth_item"
+"#ee0011" = "fire_item"
+"#ee0022" = "water_item"
 "#dd0000" = "checkpoint0"
 "#dd0010" = "checkpoint1"
 "#dd0020" = "checkpoint2"
@@ -29,3 +27,6 @@ layers = 2
 "#000010" = "connection_right"
 "#000020" = "connection_down"
 "#000030" = "connection_left"
+"#cc0000" = "slime_enemy"
+"#cc0088" = "skeleton_enemy"
+"#cc00ff" = "ghost_enemy"
