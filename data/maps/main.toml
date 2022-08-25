@@ -1,6 +1,6 @@
 [sprites]
-wall = "sprites/world/tileset/solid_brick.png"
-cracked_wall = "sprites/world/tileset/cracked_brick.png"
+brick = "sprites/world/tileset/solid_brick.png"
+cracked_brick = "sprites/world/tileset/cracked_brick.png"
 platform = "sprites/world/tileset/platform.png"
 
 [sections.tutorial]
