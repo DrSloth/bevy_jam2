@@ -5,6 +5,7 @@ sprite = "sprites/world/tileset/solid_brick.png"
 [sprites.cracked_brick]
 sprite = "sprites/world/tileset/cracked_brick.png"
 breakable = true
+collision = true
 
 [sprites.platform]
 sprite = "sprites/world/tileset/platform.png"
