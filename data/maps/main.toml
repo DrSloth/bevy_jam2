@@ -1,7 +1,100 @@
 [sprites]
-brick = "sprites/world/tileset/solid_brick.png"
-cracked_brick = "sprites/world/tileset/cracked_brick.png"
-platform = "sprites/world/tileset/platform.png"
+[sprites.brick]
+sprite = "sprites/world/tileset/solid_brick.png"
+
+[sprites.cracked_brick]
+sprite = "sprites/world/tileset/cracked_brick.png"
+breakable = true
+
+[sprites.platform]
+sprite = "sprites/world/tileset/platform.png"
+
+
+[sprites.border_edge_z0]
+sprite = "sprites/world/tileset/border_edge.png"
+zrot = 0
+
+[sprites.border_edge_z90]
+sprite = "sprites/world/tileset/border_edge.png"
+zrot = 90
+
+[sprites.border_edge_z180]
+sprite = "sprites/world/tileset/border_edge.png"
+zrot = 180
+
+[sprites.border_edge_z270]
+sprite = "sprites/world/tileset/border_edge.png"
+zrot = 270
+
+
+[sprites.border_corner_z0]
+sprite = "sprites/world/tileset/border_corner.png"
+zrot = 0
+
+[sprites.border_corner_z90]
+sprite = "sprites/world/tileset/border_corner.png"
+zrot = 90
+
+[sprites.border_corner_z180]
+sprite = "sprites/world/tileset/border_corner.png"
+zrot = 180
+
+[sprites.border_corner_z270]
+sprite = "sprites/world/tileset/border_corner.png"
+zrot = 270
+
+
+[sprites.border_inner_corner_z0]
+sprite = "sprites/world/tileset/border_inner_corner.png"
+zrot = 0
+
+[sprites.border_inner_corner_z90]
+sprite = "sprites/world/tileset/border_inner_corner.png"
+zrot = 90
+
+[sprites.border_inner_corner_z180]
+sprite = "sprites/world/tileset/border_inner_corner.png"
+zrot = 180
+
+[sprites.border_inner_corner_z270]
+sprite = "sprites/world/tileset/border_inner_corner.png"
+zrot = 270
+
+
+[sprites.checkpoint0]
+sprite = "sprites/world/checkpoint/checkpoint0.png"
+
+[sprites.checkpoint1]
+sprite = "sprites/world/checkpoint/checkpoint1.png"
+
+[sprites.checkpoint2]
+sprite = "sprites/world/checkpoint/checkpoint2.png"
+
+[sprites.checkpoint3]
+sprite = "sprites/world/checkpoint/checkpoint3.png"
+
+[sprites.earth_item]
+sprite = "sprites/items/earth.png"
+
+[sprites.fire_item]
+sprite = "sprites/items/fire.png"
+
+[sprites.water_item]
+sprite = "sprites/items/water.png"
+
+[sprites.slime_enemy]
+sprite = "sprites/enemies/slime.png"
+
+[sprites.skeleton_enemy]
+sprite = "sprites/enemies/skeleton.png"
+
+[sprites.ghost_enemy]
+sprite = "sprites/enemies/ghost.png"
+
+[sprites.connection_up]
+[sprites.connection_right]
+[sprites.connection_down]
+[sprites.connection_left]
 
 [sections.tutorial]
 base_dir = "maps/sections/tutorial/"

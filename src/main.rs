@@ -100,7 +100,7 @@ pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<As
 }
 
 fn add_initial_room(commands: &mut Commands, map: &Map, assets: &mut Assets<Image>) {
-    if let Err(e) = maps::load_room_sprites(assets, commands, map, "tutorial", "room0") {
+    if let Err(e) = maps::load_room_sprites(assets, commands, map, "tutorial", "room0", Some(0)) {
         panic!("Could not load initial room: {}", e);
     }
 }

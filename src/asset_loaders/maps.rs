@@ -11,34 +11,44 @@ use thiserror::Error;
 
 use crate::{
     asset_loaders::{AssetLoadError, EmbeddedAssetLoader, EmbeddedAssets, EmbeddedData},
-    collision::Collider,
+    collision::{BreakableCollider, Collider},
 };
 
 const TILE_SIZE: f32 = 8.0;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct Map {
-    sprites: HashMap<String, PathBuf>,
+    sprites: HashMap<String, TileConfig>,
     sections: HashMap<String, Section>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
+pub struct TileConfig {
+    sprite: Option<PathBuf>,
+    #[serde(default)]
+    zrot: i16,
+    #[serde(default)]
+    breakable: bool,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct Section {
     base_dir: PathBuf,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct Room {
-    layers: u32,
+    layers: Vec<String>,
+    #[serde(default)]
+    variations: Vec<Vec<String>>,
     colors: HashMap<String, String>,
-
     // TODO: Implement connections
-    #[serde(rename = "connections")]
-    _connections: HashMap<String, String>,
+    // #[serde(rename = "connections")]
+    // _connections: HashMap<String, String>,
 }
 
 pub fn map_as_resource(filename: &str) -> Map {
-    match load_toml::<Map, &str>(filename) {
+    match load_toml(filename) {
         Ok(map) => map,
         Err(e) => {
             panic!("There was an error parsing the map: {}", e);
@@ -62,18 +72,28 @@ pub fn load_room_sprites(
     map: &Map,
     section_id: &str,
     room_id: &str,
+    variation_id: Option<usize>,
 ) -> Result<(), LoadRoomError> {
     if let Some((_, sec)) = map.sections.iter().find(|(s, _)| *s == section_id) {
         let room: Room = load_toml(sec.base_dir.join(room_id).join("room.toml"))
             .map_err(LoadRoomError::RoomParseError)?;
-        for i in 0..room.layers {
+
+        let variation_iter = variation_id.iter().flat_map(|id| {
+            room.variations
+                .get(*id)
+                .unwrap_or_else(|| panic!("Variation id {:?} does not exist", variation_id))
+                .iter()
+        });
+
+        // .map(|variation| variation.iter())
+        for (idx, layer) in (0i16..).zip(room.layers.iter().chain(variation_iter)) {
             load_layer_file(
                 assets,
                 commands,
                 map,
                 &room,
-                i,
-                sec.base_dir.join(room_id).join(format!("layer{}.png", i)),
+                idx,
+                sec.base_dir.join(room_id).join(layer),
             )
             .map_err(LoadRoomError::LoadLayerError)?;
         }
@@ -98,10 +118,11 @@ fn load_layer_file<P: AsRef<Path>>(
     commands: &mut Commands,
     map: &Map,
     room: &Room,
-    layer_n: u32,
-    path: P,
+    layer_idx: i16,
+    layer_path: P,
 ) -> Result<(), LoadLayerError> {
-    let image = EmbeddedData::load_image::<P, Rgba<u8>>(path).map_err(LoadLayerError::LoadError)?;
+    let image =
+        EmbeddedData::load_image::<P, Rgba<u8>>(layer_path).map_err(LoadLayerError::LoadError)?;
     for (i, pixel) in image.pixels().enumerate() {
         let i: u32 = i
             .try_into()
@@ -111,22 +132,26 @@ fn load_layer_file<P: AsRef<Path>>(
             .height()
             .saturating_sub(i.saturating_div(image.width()));
         if pixel.0[3] != 0 {
-            let color_hex = format!(
-                "#{}",
-                hex::encode(pixel.0.into_iter().take(3).collect::<Vec<u8>>())
-            );
+            let color_hex = format!("#{:02x}{:02x}{:02x}", pixel.0[0], pixel.0[1], pixel.0[2]);
             let sprite_id = room
                 .colors
                 .get(&color_hex)
                 .ok_or(LoadLayerError::InvalidColor(color_hex))?;
-            let sprite_path = map
+
+            let tile_config = map
                 .sprites
                 .get(sprite_id)
                 .ok_or_else(|| LoadLayerError::InvalidSprite(sprite_id.to_string()))?;
+
             let size = Vec2::splat(TILE_SIZE);
-            #[allow(clippy::cast_precision_loss)]
-            commands
-                .spawn_bundle(SpriteBundle {
+            if let Some(sprite_path) = &tile_config.sprite {
+                #[allow(clippy::cast_precision_loss)] // NOTE Currently no better solution
+                let translation = Vec3::new(
+                    (x as f32) * TILE_SIZE,
+                    (y as f32) * TILE_SIZE,
+                    0.0 - (f32::from(layer_idx)),
+                );
+                let mut tile = commands.spawn_bundle(SpriteBundle {
                     // TODO: Optimize: Reuse already loaded assets by saving handles
                     texture: EmbeddedAssets::load_image_as_asset(assets, sprite_path)
                         .map_err(LoadLayerError::LoadError)?,
@@ -135,16 +160,22 @@ fn load_layer_file<P: AsRef<Path>>(
                         ..Default::default()
                     },
                     transform: Transform {
-                        translation: Vec3::new(
-                            (x as f32) * TILE_SIZE,
-                            (y as f32) * TILE_SIZE,
-                            0.0 - (room.layers.saturating_sub(layer_n) as f32),
+                        translation,
+                        rotation: Quat::from_axis_angle(
+                            Vec3::Z,
+                            f32::from(tile_config.zrot.wrapping_neg()).to_radians(),
                         ),
                         ..Default::default()
                     },
                     ..Default::default()
-                })
-                .insert(Collider { size });
+                });
+
+                tile.insert(Collider { size });
+
+                if tile_config.breakable {
+                    tile.insert(BreakableCollider);
+                }
+            }
         }
     }
     Ok(())

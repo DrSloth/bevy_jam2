@@ -1,0 +1,4 @@
+# Datei ist leer, da aktuell noch room.toml fuer Farbmapping genutzt wird
+# Sobald section.toml genutzt wird, Farben uebertragen
+
+[colors]

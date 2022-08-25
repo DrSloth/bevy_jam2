@@ -34,60 +34,76 @@ pub fn collision_system(
     mut collision_events_writer: EventWriter<CollisionEvent>,
 ) {
     // NOTE this is a fix to make the collisions fell more smooth
-    const COLLISION_TOLERANCE: f32 = 0.001;
+    const COLLISION_TOLERANCE: f32 = 0.0001;
 
     for (mut moving_transform, moving_collider, entity) in movable_collider_query.iter_mut() {
         for (static_transform, static_collider) in collider_query.iter() {
             let collision = collide_aabb::collide(
                 moving_transform.translation,
                 moving_collider.size + Vec2::new(COLLISION_TOLERANCE, COLLISION_TOLERANCE),
+                // moving_collider.size,
                 static_transform.translation,
                 static_collider.size,
             );
 
             if let Some(collision) = collision {
-                move_out_of_bounds(
+                println!(
+                    "Coll: {:?}, static_pos: {}, moving_pos: {}",
+                    collision, static_transform.translation, moving_transform.translation
+                );
+                if let Some(trans) = next_out_of_bounds_translation(
                     &collision,
-                    &mut *moving_transform,
+                    &moving_transform,
                     moving_collider,
                     static_transform,
                     static_collider,
-                );
-                collision_events_writer.send(CollisionEvent { collision, entity });
+                ) {
+                    println!(
+                        "Pos is: {}, Goal pos is: {}",
+                        moving_transform.translation, trans
+                    );
+                    if (trans - moving_transform.translation).abs().length() > COLLISION_TOLERANCE {
+                        println!("Moving!");
+                        moving_transform.translation = trans;
+                        collision_events_writer.send(CollisionEvent { collision, entity });
+                    } else {
+                        println!("INSIDE!");
+                    }
+                }
             }
         }
     }
 }
 
-fn move_out_of_bounds(
+fn next_out_of_bounds_translation(
     collision: &Collision,
-    moving_transform: &mut Transform,
+    moving_transform: &Transform,
     moving_collider: &MoveableCollider,
     static_transform: &Transform,
     static_collider: &Collider,
-) {
+) -> Option<Vec3> {
     match collision {
         Collision::Top | Collision::Bottom => {
             let signum = collision_signum(collision);
-            moving_transform.translation = Vec3::new(
+            Some(Vec3::new(
                 moving_transform.translation.x,
                 static_transform.translation.y
                     + signum * static_collider.size.y / 2.0
                     + signum * moving_collider.size.y / 2.0,
                 moving_transform.translation.z,
-            );
+            ))
         }
         Collision::Right | Collision::Left => {
             let signum = collision_signum(collision);
-            moving_transform.translation = Vec3::new(
+            Some(Vec3::new(
                 static_transform.translation.x
                     + signum * static_collider.size.x / 2.0
                     + signum * moving_collider.size.x / 2.0,
                 moving_transform.translation.y,
                 moving_transform.translation.z,
-            );
+            ))
         }
-        Collision::Inside => (),
+        Collision::Inside => None,
     }
 }
 
@@ -98,3 +114,6 @@ fn collision_signum(collision: &Collision) -> f32 {
         Collision::Inside => 0.0,
     }
 }
+
+#[derive(Component, Debug)]
+pub struct BreakableCollider;

@@ -3,8 +3,8 @@ use bevy::{prelude::*, sprite::collide_aabb::Collision};
 use crate::collision::{CollisionEvent, MoveableCollider};
 
 pub const VEL_SYSTEM_STAGE: &str = "vel_sys";
-pub const GRAVITY: f32 = 0.07;
-pub const GRAVITY_MAX: f32 = -9.0;
+pub const GRAVITY: f32 = 1.0;
+pub const GRAVITY_MAX: f32 = -8.7;
 
 #[derive(Debug)]
 pub struct PhysicsPlugin;
