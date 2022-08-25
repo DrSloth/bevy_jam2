@@ -4,7 +4,7 @@ pub mod collectibles;
 
 pub use skills::*;
 
-use bevy::{ecs::system::EntityCommands, prelude::*, utils::Instant};
+use bevy::{ecs::system::EntityCommands, prelude::*, sprite::collide_aabb, utils::Instant};
 use std::{
     any::TypeId,
     fmt::{self, Debug, Formatter},
@@ -12,7 +12,11 @@ use std::{
 };
 
 use super::MouseCursor;
-use crate::{combat::Projectile, physics::VelocityMap};
+use crate::{
+    collision::{BreakableCollider, Collider},
+    combat::Projectile,
+    physics::VelocityMap,
+};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct AbilityId(TypeId);
@@ -204,18 +208,49 @@ pub fn player_shoot_system(
                     direction,
                     vel_id: None,
                 };
+                let size = Vec2::splat(PLAYER_SHOT_SIZE);
                 commands
                     .spawn_bundle(SpriteBundle {
                         sprite: Sprite {
                             color: Color::rgb(0.0, 1.0, 1.0),
-                            custom_size: Some(Vec2::new(PLAYER_SHOT_SIZE, PLAYER_SHOT_SIZE)),
+                            custom_size: Some(size),
                             ..Default::default()
                         },
                         transform: Transform::from_translation(player_transform.translation),
                         ..Default::default()
                     })
                     .insert(VelocityMap::new())
+                    .insert(PlayerShotProjectile { size })
                     .insert(projectile);
+            }
+        }
+    }
+}
+
+/// Component for projectiles that can break breakable walls
+#[derive(Debug, Component)]
+pub struct PlayerShotProjectile {
+    pub size: Vec2,
+}
+
+/// System that destroys breakable colliders with player projectiles
+pub fn player_shot_destroy_walls_system(
+    mut commands: Commands,
+    shot_query: Query<(&Transform, &PlayerShotProjectile, Entity)>,
+    breakable_wall_query: Query<(&Transform, &Collider, Entity), With<BreakableCollider>>,
+) {
+    for (shot_trans, shot, shot_entity) in shot_query.iter() {
+        for (wall_trans, wall_coll, wall_entity) in breakable_wall_query.iter() {
+            if collide_aabb::collide(
+                shot_trans.translation,
+                shot.size,
+                wall_trans.translation,
+                wall_coll.size,
+            )
+            .is_some()
+            {
+                commands.entity(shot_entity).despawn();
+                commands.entity(wall_entity).despawn();
             }
         }
     }

@@ -2,7 +2,6 @@ pub mod abilities;
 
 use bevy::{prelude::*, sprite::collide_aabb::Collision};
 
-use self::abilities::PlayerInventory;
 use crate::{
     asset_loaders::{EmbeddedAssetLoader, EmbeddedAssets},
     camera::FollowedByCamera,
@@ -10,7 +9,7 @@ use crate::{
     physics::{Gravity, VelocityId, VelocityMap, GRAVITY, VEL_SYSTEM_STAGE},
     PLAYER_SIZE,
 };
-use abilities::collectibles;
+use abilities::{collectibles, PlayerInventory};
 
 #[derive(Debug)]
 pub struct PlayerPlugin;
@@ -23,6 +22,7 @@ impl Plugin for PlayerPlugin {
             .add_system(player_land_system)
             .add_system(abilities::player_shoot_system)
             .add_system(collectibles::collect_ability_system)
+            .add_system(abilities::player_shot_destroy_walls_system)
             .add_system_to_stage(CoreStage::PreUpdate, move_cursor_system)
             .add_system_to_stage(CoreStage::PostUpdate, abilities::player_dash_system)
             .add_system_to_stage(CoreStage::PostUpdate, player_fall_system)
@@ -45,7 +45,7 @@ fn player_setup_system(mut commands: Commands, mut assets: ResMut<Assets<Image>>
             },
             texture,
             transform: Transform {
-                translation: Vec3::new(1.0 * PLAYER_SIZE, 4.0 * PLAYER_SIZE, 0.0),
+                translation: Vec3::new(6.0 * PLAYER_SIZE, 4.0 * PLAYER_SIZE, 0.0),
                 ..Default::default()
             },
             ..Default::default()

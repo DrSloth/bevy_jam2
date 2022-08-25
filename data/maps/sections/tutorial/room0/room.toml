@@ -1,4 +1,5 @@
 layers = ["borders.png", "bricks.png", "connections.png"]
+variations = [["breakable.png"]]
 
 [colors]
 "#ffffff" = "brick"
@@ -18,7 +19,7 @@ layers = ["borders.png", "bricks.png", "connections.png"]
 "#ff44bb" = "border_inner_corner_z270"
 "#ee0000" = "earth_item"
 "#ee0011" = "fire_item"
-"#" = "water_item"
+"#ee0022" = "water_item"
 "#dd0000" = "checkpoint0"
 "#dd0010" = "checkpoint1"
 "#dd0020" = "checkpoint2"
