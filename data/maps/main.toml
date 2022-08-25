@@ -1,7 +1,13 @@
 [sprites]
-brick = { sprite = "sprites/world/tileset/solid_brick.png"}
-cracked_brick = { sprite = "sprites/world/tileset/cracked_brick.png"}
-platform =  { sprite = "sprites/world/tileset/platform.png"}
+[sprites.brick]
+sprite = "sprites/world/tileset/solid_brick.png"
+
+[sprites.cracked_brick]
+sprite = "sprites/world/tileset/cracked_brick.png"
+breakable = true
+
+[sprites.platform]
+sprite = "sprites/world/tileset/platform.png"
 
 
 [sprites.border_edge_z0]
