@@ -2,16 +2,15 @@ pub mod abilities;
 
 use bevy::{prelude::*, sprite::collide_aabb::Collision};
 
+use self::abilities::PlayerInventory;
 use crate::{
     asset_loaders::{EmbeddedAssetLoader, EmbeddedAssets},
     camera::FollowedByCamera,
     collision::{CollisionEvent, MoveableCollider},
-    physics::{Gravity, VelocityId, VelocityMap, GRAVITY},
+    physics::{Gravity, VelocityId, VelocityMap, GRAVITY, VEL_SYSTEM_STAGE},
     PLAYER_SIZE,
 };
 use abilities::collectibles;
-
-use self::abilities::PlayerInventory;
 
 #[derive(Debug)]
 pub struct PlayerPlugin;
@@ -27,6 +26,7 @@ impl Plugin for PlayerPlugin {
             .add_system_to_stage(CoreStage::PreUpdate, move_cursor_system)
             .add_system_to_stage(CoreStage::PostUpdate, abilities::player_dash_system)
             .add_system_to_stage(CoreStage::PostUpdate, player_fall_system)
+            .add_system_to_stage(VEL_SYSTEM_STAGE, add_player_velocity_system)
             .add_event::<JumpEvent>();
     }
 }
@@ -92,28 +92,22 @@ impl PlayerMovement {
 
 /// System to move the player with input
 pub fn player_input_system(
-    mut player_query: Query<(&mut VelocityMap, &PlayerMovement, Entity)>,
+    mut player_query: Query<(&mut PlayerMovement, Entity)>,
     mut jump_event_writer: EventWriter<JumpEvent>,
     kb_input: ResMut<Input<KeyCode>>,
 ) {
     const SPEED: f32 = 2.0;
 
-    for (mut velocity_map, player, entity) in player_query.iter_mut() {
-        let vel = if let Some(vel) = velocity_map.get_mut(player.vel_id) {
-            vel
-        } else {
-            unreachable!("Requested bad velocity id");
-        };
-
+    for (mut player, entity) in player_query.iter_mut() {
         if !player.can_move {
             continue;
         }
 
-        vel.x = 0.0;
+        player.velocity.x = 0.0;
         for key in kb_input.get_pressed() {
             match key {
-                KeyCode::A => vel.x = -SPEED,
-                KeyCode::D => vel.x = SPEED,
+                KeyCode::A => player.velocity.x += -SPEED,
+                KeyCode::D => player.velocity.x += SPEED,
                 KeyCode::Space => jump_event_writer.send(JumpEvent(entity)),
                 _ => (),
             }
@@ -170,28 +164,26 @@ fn grav_is_falling(grav: &Gravity, vel_map: &VelocityMap) -> bool {
 }
 
 /// Makes the player slow down while falling
-pub fn player_fall_system(mut player_query: Query<(&mut VelocityMap, &PlayerMovement, &Gravity)>) {
+pub fn player_fall_system(mut player_query: Query<(&mut PlayerMovement, &mut Gravity)>) {
     const PLAYER_FALL_MULTIPLIER: f32 = 1.3;
 
-    for (mut velocity_map, player, grav) in player_query.iter_mut() {
-        if let (Some(mut player_vel), Some(mut gravity_vel)) = (
-            velocity_map.get(player.vel_id),
-            velocity_map.get(grav.vel_id),
-        ) {
-            if player_vel.y > 0.0 {
-                player_vel.y += gravity_vel.y;
-                gravity_vel = Vec2::ZERO;
-            } else if gravity_vel.y < -(GRAVITY * 2.0) {
-                // TODO maybe this should be a gravity scale in the gravity component
-                gravity_vel.y -= GRAVITY * PLAYER_FALL_MULTIPLIER;
-            }
+    for (mut player, mut gravity) in player_query.iter_mut() {
+        if player.velocity.y > 0.0 {
+            player.velocity.y += gravity.velocity.y;
+            gravity.velocity = Vec2::ZERO;
+        } else if gravity.velocity.y < -(GRAVITY * 2.0) {
+            // TODO maybe this should be a gravity scale in the gravity component
+            gravity.velocity.y -= GRAVITY * PLAYER_FALL_MULTIPLIER;
+        }
+    }
+}
 
-            if let Err(e) = velocity_map
-                .set(player.vel_id, player_vel)
-                .and_then(|_| velocity_map.set(grav.vel_id, gravity_vel))
-            {
-                panic!("{:?} -> The velocity map changd while ids were held", e);
-            }
+fn add_player_velocity_system(mut query: Query<(&mut VelocityMap, &PlayerMovement)>) {
+    for (mut vel_map, player) in query.iter_mut() {
+        if let Some(vel) = vel_map.get_mut(player.vel_id) {
+            *vel = player.velocity;
+        } else {
+            panic!("Players velocity not inside map, you forgot to register");
         }
     }
 }

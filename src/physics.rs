@@ -2,8 +2,8 @@ use bevy::{prelude::*, sprite::collide_aabb::Collision};
 
 use crate::collision::{CollisionEvent, MoveableCollider};
 
+pub const VEL_SYSTEM_STAGE: &str = "vel_sys";
 pub const GRAVITY: f32 = 0.07;
-
 pub const GRAVITY_MAX: f32 = -9.0;
 
 #[derive(Debug)]
@@ -12,6 +12,12 @@ pub struct PhysicsPlugin;
 impl Plugin for PhysicsPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(gravity_system)
+            .add_stage_after(
+                CoreStage::PostUpdate,
+                VEL_SYSTEM_STAGE,
+                SystemStage::parallel(),
+            )
+            .add_system_to_stage(VEL_SYSTEM_STAGE, add_gravity_velocity_system)
             .add_system_to_stage(CoreStage::PostUpdate, landing_system)
             .add_system_to_stage(CoreStage::Last, velocity_system);
     }
@@ -91,12 +97,16 @@ pub fn velocity_system(mut query: Query<(&mut Transform, &mut VelocityMap)>) {
 #[derive(Component, Debug)]
 pub struct Gravity {
     pub(crate) vel_id: VelocityId,
+    pub velocity: Vec2,
 }
 
 impl Gravity {
     /// Create a new Gravity without a velocity id
     pub fn new(vel_id: VelocityId) -> Self {
-        Self { vel_id }
+        Self {
+            vel_id,
+            velocity: Vec2::ZERO,
+        }
     }
 
     pub fn new_in(vel_map: &mut VelocityMap) -> Self {
@@ -105,22 +115,15 @@ impl Gravity {
 }
 
 /// System to apply gravity to all entities with the Gravity components
-pub fn gravity_system(mut query: Query<(&mut VelocityMap, &mut Gravity)>) {
-    for (mut velocity_map, grav) in query.iter_mut() {
-        // transform.translation.y -= GRAVITY;
-        let vel = if let Some(vel) = velocity_map.get_mut(grav.vel_id) {
-            vel
-        } else {
-            unreachable!("Requested velocity id doesn't exist");
-        };
-
-        vel.y = (vel.y - GRAVITY).max(GRAVITY_MAX);
+pub fn gravity_system(mut query: Query<&mut Gravity>) {
+    for mut grav in query.iter_mut() {
+        grav.velocity.y = (grav.velocity.y - GRAVITY).max(GRAVITY_MAX);
     }
 }
 
 pub fn landing_system(
     mut collision_event_reader: EventReader<CollisionEvent>,
-    mut query: Query<(&mut Gravity, &mut VelocityMap), With<MoveableCollider>>,
+    mut query: Query<&mut Gravity, With<MoveableCollider>>,
 ) {
     for evt in collision_event_reader.iter() {
         match evt.collision {
@@ -128,10 +131,19 @@ pub fn landing_system(
             _ => continue,
         }
 
-        if let Ok((grav, mut velocity_map)) = query.get_mut(evt.entity) {
-            if let Some(vel) = velocity_map.get_mut(grav.vel_id) {
-                *vel = Vec2::ZERO;
-            }
+        if let Ok(mut grav) = query.get_mut(evt.entity) {
+            grav.velocity = Vec2::ZERO;
+        }
+    }
+}
+
+fn add_gravity_velocity_system(mut query: Query<(&mut VelocityMap, &Gravity)>) {
+    for (mut vel_map, grav) in query.iter_mut() {
+        if let Err(e) = vel_map.set(grav.vel_id, grav.velocity) {
+            panic!(
+                "{} -> Gravity velocity not inside map, you forgot to register it",
+                e
+            );
         }
     }
 }
