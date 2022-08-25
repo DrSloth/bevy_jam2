@@ -76,12 +76,7 @@ pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<As
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
                 color: Color::rgb(1.0, 0.5, 0.0),
-                custom_size: Some(Vec2::splat(2.0)),
-                ..Default::default()
-            },
-            transform: Transform {
-                // Always be in front of player
-                translation: Vec3::new(0.0, 0.0, 1.0),
+                custom_size: Some(Vec2::new(2.0, 2.0)),
                 ..Default::default()
             },
             ..Default::default()
@@ -129,6 +124,8 @@ fn add_player(commands: &mut Commands, assets: &mut Assets<Image>) {
     let texture =
         EmbeddedAssets::load_image_as_asset(assets, "sprites/character/movement/idle.png")
             .unwrap_or_else(|e| panic!("The player sprite could not be loaded: {}", e));
+
+    let mut vel_map = VelocityMap::new();
     commands
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
@@ -143,13 +140,10 @@ fn add_player(commands: &mut Commands, assets: &mut Assets<Image>) {
             ..Default::default()
         })
         .insert(FollowedByCamera)
-        .insert(PlayerMovement::new())
-        // .insert(PlayerShoot::default())
-        .insert(Gravity::new())
-        .insert(VelocityMap::new())
-        // .insert(PlayerDash::default())
+        .insert(PlayerMovement::new_in(&mut vel_map))
+        .insert(Gravity::new_in(&mut vel_map))
+        .insert(vel_map)
         .insert(PlayerInventory::new())
-        // .insert(PlayerInventory::new_with::<PlayerShoot, PlayerDash>())
         .insert(MoveableCollider {
             size: Vec2::splat(PLAYER_SIZE),
         });

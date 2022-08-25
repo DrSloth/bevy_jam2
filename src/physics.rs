@@ -7,7 +7,7 @@ pub const GRAVITY: f32 = 0.07;
 pub const GRAVITY_MAX: f32 = -9.0;
 
 /// An id to a velocity inside a velocity map
-#[derive(Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Clone, Copy)]
 pub struct VelocityId(usize);
 
 /// A map of velocities set by different component.
@@ -50,15 +50,21 @@ impl VelocityMap {
         self.map.get(id.0).copied()
     }
 
-    pub fn set(&mut self, id: VelocityId, vel: Vec2) -> Option<Vec2> {
+    pub fn set(&mut self, id: VelocityId, vel: Vec2) -> Result<Vec2, VelocityError> {
         if let Some(v) = self.get_mut(id) {
             let old_val = *v;
             *v = vel;
-            Some(old_val)
+            Ok(old_val)
         } else {
-            None
+            Err(VelocityError::NotFound)
         }
     }
+}
+
+#[derive(Debug, Clone, thiserror::Error)]
+pub enum VelocityError {
+    #[error("The id is not inside the velocity map, try to register first")]
+    NotFound,
 }
 
 pub fn velocity_system(mut query: Query<(&mut Transform, &mut VelocityMap)>) {
@@ -71,32 +77,30 @@ pub fn velocity_system(mut query: Query<(&mut Transform, &mut VelocityMap)>) {
 }
 
 /// Gravity component to make things fall
-#[derive(Component, Debug, Default)]
+#[derive(Component, Debug)]
 pub struct Gravity {
-    pub(crate) vel_id: Option<VelocityId>,
+    pub(crate) vel_id: VelocityId,
 }
 
 impl Gravity {
     /// Create a new Gravity without a velocity id
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(vel_id: VelocityId) -> Self {
+        Self { vel_id }
     }
 
-    pub fn vel_id(&self) -> &Option<VelocityId> {
-        &self.vel_id
+    pub fn new_in(vel_map: &mut VelocityMap) -> Self {
+        Self::new(vel_map.register().0)
     }
 }
 
 /// System to apply gravity to all entities with the Gravity components
 pub fn gravity_system(mut query: Query<(&mut VelocityMap, &mut Gravity)>) {
-    for (mut velocity_map, mut grav) in query.iter_mut() {
+    for (mut velocity_map, grav) in query.iter_mut() {
         // transform.translation.y -= GRAVITY;
-        let vel = if let Some(vel) = grav.vel_id.and_then(|id| velocity_map.get_mut(id)) {
+        let vel = if let Some(vel) = velocity_map.get_mut(grav.vel_id) {
             vel
         } else {
-            let (id, vel) = velocity_map.register();
-            grav.vel_id = Some(id);
-            vel
+            unreachable!("Requested velocity id doesn't exist");
         };
 
         vel.y = (vel.y - GRAVITY).max(GRAVITY_MAX);
@@ -114,7 +118,7 @@ pub fn landing_system(
         }
 
         if let Ok((grav, mut velocity_map)) = query.get_mut(evt.entity) {
-            if let Some(vel) = grav.vel_id.and_then(|id| velocity_map.get_mut(id)) {
+            if let Some(vel) = velocity_map.get_mut(grav.vel_id) {
                 *vel = Vec2::ZERO;
             }
         }

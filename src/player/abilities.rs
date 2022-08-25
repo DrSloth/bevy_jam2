@@ -278,26 +278,28 @@ pub fn player_dash_system(
             continue;
         }
 
-        if let (Some(player_vel_id), Some(gravity)) = (player.vel_id, gravity.vel_id) {
-            if let (Some(mut player_vel), Some(mut grav_vel)) =
-                (vel_map.get(player_vel_id), vel_map.get(gravity))
+        if let (Some(mut player_vel), Some(mut grav_vel)) =
+            (vel_map.get(player.vel_id), vel_map.get(gravity.vel_id))
+        {
+            if player_vel.x < PLAYER_RUN_EPSILON && player_vel.x > -PLAYER_RUN_EPSILON {
+                continue;
+            }
+
+            if player_vel.x > PLAYER_RUN_EPSILON {
+                player_vel.x = PLAYER_DASH_SPEED;
+            } else if player_vel.x < -PLAYER_RUN_EPSILON {
+                player_vel.x = -PLAYER_DASH_SPEED;
+            }
+
+            player_vel.y = 0.0;
+            grav_vel.y = 0.0;
+            player.can_move = false;
+
+            if let Err(e) = vel_map
+                .set(player.vel_id, player_vel)
+                .and_then(|_| vel_map.set(gravity.vel_id, grav_vel))
             {
-                if player_vel.x < PLAYER_RUN_EPSILON && player_vel.x > -PLAYER_RUN_EPSILON {
-                    continue;
-                }
-
-                if player_vel.x > PLAYER_RUN_EPSILON {
-                    player_vel.x = PLAYER_DASH_SPEED;
-                } else if player_vel.x < -PLAYER_RUN_EPSILON {
-                    player_vel.x = -PLAYER_DASH_SPEED;
-                }
-
-                player_vel.y = 0.0;
-                grav_vel.y = 0.0;
-                player.can_move = false;
-
-                vel_map.set(player_vel_id, player_vel);
-                vel_map.set(gravity, grav_vel);
+                panic!("{} -> The velocity map was reset while ids were held", e)
             }
         }
     }

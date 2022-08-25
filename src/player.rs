@@ -13,44 +13,41 @@ pub struct JumpEvent(pub Entity);
 /// Component only added to the player character
 #[derive(Component, Debug)]
 pub struct PlayerMovement {
-    pub(crate) vel_id: Option<VelocityId>,
+    pub(crate) vel_id: VelocityId,
     //TODO maybe use a state machine
     can_jump: bool,
     can_move: bool,
 }
 
-impl Default for PlayerMovement {
-    fn default() -> Self {
+impl PlayerMovement {
+    /// Create a new player movement with the given `vel_id`
+    pub fn new(vel_id: VelocityId) -> Self {
         Self {
-            vel_id: None,
+            vel_id,
             can_jump: true,
             can_move: true,
         }
     }
-}
 
-impl PlayerMovement {
-    /// Create a new player movement withou a velocity id
-    pub fn new() -> Self {
-        Self::default()
+    /// Create a new player movement inside the given [`VelocityMap`]
+    pub fn new_in(vel_map: &mut VelocityMap) -> Self {
+        Self::new(vel_map.register().0)
     }
 }
 
 /// System to move the player with input
 pub fn player_input_system(
-    mut player_query: Query<(&mut VelocityMap, &mut PlayerMovement, Entity)>,
+    mut player_query: Query<(&mut VelocityMap, &PlayerMovement, Entity)>,
     mut jump_event_writer: EventWriter<JumpEvent>,
     kb_input: ResMut<Input<KeyCode>>,
 ) {
     const SPEED: f32 = 2.0;
 
-    for (mut velocity_map, mut player, entity) in player_query.iter_mut() {
-        let vel = if let Some(vel) = player.vel_id.and_then(|id| velocity_map.get_mut(id)) {
+    for (mut velocity_map, player, entity) in player_query.iter_mut() {
+        let vel = if let Some(vel) = velocity_map.get_mut(player.vel_id) {
             vel
         } else {
-            let (id, vel) = velocity_map.register();
-            player.vel_id = Some(id);
-            vel
+            unreachable!("Requested bad velocity id");
         };
 
         if !player.can_move {
@@ -81,10 +78,7 @@ pub fn player_jump_system(
             let can_jump = !falling && player_movement.can_jump;
 
             if can_jump {
-                if let Some(vel) = player_movement
-                    .vel_id
-                    .and_then(|id| velocity_map.get_mut(id))
-                {
+                if let Some(vel) = velocity_map.get_mut(player_movement.vel_id) {
                     vel.y = JUMP_POWER;
                     player_movement.can_jump = false;
                 }
@@ -100,14 +94,9 @@ pub fn player_land_system(
     for collision in collision_event_reader.iter() {
         if let Collision::Top = collision.collision {
             if let Ok((mut player, grav, vel_map)) = player_query.get_mut(collision.entity) {
-                let player_y_speed = player
-                    .vel_id
-                    .and_then(|id| vel_map.get(id))
-                    .unwrap_or(Vec2::ZERO)
-                    .y
-                    .abs();
+                let player_y_speed = vel_map.get(player.vel_id).unwrap_or(Vec2::ZERO).y.abs();
 
-                if let Some(grav_vel) = grav.vel_id.and_then(|id| vel_map.get(id)) {
+                if let Some(grav_vel) = vel_map.get(grav.vel_id) {
                     if !is_falling(grav_vel.y) && player_y_speed < GRAVITY && !player.can_jump {
                         player.can_jump = true;
                     }
@@ -122,8 +111,8 @@ fn is_falling(grav_y_vel: f32) -> bool {
 }
 
 fn grav_is_falling(grav: &Gravity, vel_map: &VelocityMap) -> bool {
-    grav.vel_id()
-        .and_then(|id| vel_map.get(id))
+    vel_map
+        .get(grav.vel_id)
         .map_or(true, |vel| is_falling(vel.y))
 }
 
@@ -132,21 +121,23 @@ pub fn player_fall_system(mut player_query: Query<(&mut VelocityMap, &PlayerMove
     const PLAYER_FALL_MULTIPLIER: f32 = 1.3;
 
     for (mut velocity_map, player, grav) in player_query.iter_mut() {
-        if let (Some(player_id), Some(grav_id)) = (player.vel_id, *grav.vel_id()) {
-            if let (Some(mut player_vel), Some(mut gravity_vel)) = (
-                player.vel_id.and_then(|id| velocity_map.get(id)),
-                grav.vel_id().and_then(|id| velocity_map.get(id)),
-            ) {
-                if player_vel.y > 0.0 {
-                    player_vel.y += gravity_vel.y;
-                    gravity_vel = Vec2::ZERO;
-                } else if gravity_vel.y < -(GRAVITY * 2.0) {
-                    // TODO maybe this should be a gravity scale in the gravity component
-                    gravity_vel.y -= GRAVITY * PLAYER_FALL_MULTIPLIER;
-                }
+        if let (Some(mut player_vel), Some(mut gravity_vel)) = (
+            velocity_map.get(player.vel_id),
+            velocity_map.get(grav.vel_id),
+        ) {
+            if player_vel.y > 0.0 {
+                player_vel.y += gravity_vel.y;
+                gravity_vel = Vec2::ZERO;
+            } else if gravity_vel.y < -(GRAVITY * 2.0) {
+                // TODO maybe this should be a gravity scale in the gravity component
+                gravity_vel.y -= GRAVITY * PLAYER_FALL_MULTIPLIER;
+            }
 
-                velocity_map.set(player_id, player_vel);
-                velocity_map.set(grav_id, gravity_vel);
+            if let Err(e) = velocity_map
+                .set(player.vel_id, player_vel)
+                .and_then(|_| velocity_map.set(grav.vel_id, gravity_vel))
+            {
+                panic!("{:?} -> The velocity map changd while ids were held", e);
             }
         }
     }
