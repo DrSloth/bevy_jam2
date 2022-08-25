@@ -1,5 +1,5 @@
 [sprites]
-wall = "sprites/world/wall_32x32.png"
+wall = "sprites/world/tileset/solid_brick.png"
 
 [sections.tutorial]
 base_dir = "maps/sections/tutorial/"

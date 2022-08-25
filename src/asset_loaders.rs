@@ -3,8 +3,11 @@ pub mod maps;
 use bevy::{
     asset::{Assets, Handle},
     prelude::*,
-    render::render_resource::{Extent3d, TextureDimension, TextureFormat},
     render::texture::ImageSampler,
+    render::{
+        // render_resource::{Extent3d, TextureDimension, TextureFormat},
+        texture::{CompressedImageFormats, ImageType},
+    },
 };
 use std::{io::Cursor, path::Path};
 
@@ -58,25 +61,17 @@ impl<T: RustEmbed> EmbeddedAssetLoader for T {
         assets: &mut Assets<Image>,
         path: P,
     ) -> Result<Handle<Image>, AssetLoadError> {
-        Self::load_image::<P, Rgba<f32>>(path).map(|image| {
-            let mut texture = Image::new(
-                Extent3d {
-                    width: image.width(),
-                    height: image.height(),
-                    depth_or_array_layers: 1,
-                },
-                TextureDimension::D2,
-                // darken_image(conv.into_raw()).into_iter().map(|f| f.to_ne_bytes()).flatten().collect(),
-                image
-                    .into_raw()
-                    .into_iter()
-                    .flat_map(f32::to_ne_bytes)
-                    .collect(),
-                TextureFormat::Rgba32Float,
-            );
-            texture.sampler_descriptor = ImageSampler::nearest();
-            assets.add(texture)
-        })
+        let path = path.as_ref();
+        let image = Self::load(path)?;
+        let mut image = Image::from_buffer(
+            &image,
+            ImageType::MimeType("image/png"),
+            CompressedImageFormats::empty(),
+            true,
+        )
+        .unwrap_or_else(|e| panic!("Image {:?} couldn't be loaded: {}", path.to_str(), e));
+        image.sampler_descriptor = ImageSampler::nearest();
+        Ok(assets.add(image))
     }
 
     fn load_image<P: AsRef<Path>, I: Pixel + ImageConverter>(

@@ -6,6 +6,17 @@ pub const GRAVITY: f32 = 0.07;
 
 pub const GRAVITY_MAX: f32 = -9.0;
 
+#[derive(Debug)]
+pub struct PhysicsPlugin;
+
+impl Plugin for PhysicsPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_system(gravity_system)
+            .add_system_to_stage(CoreStage::PostUpdate, landing_system)
+            .add_system_to_stage(CoreStage::Last, velocity_system);
+    }
+}
+
 /// An id to a velocity inside a velocity map
 #[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Clone, Copy)]
 pub struct VelocityId(usize);

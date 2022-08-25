@@ -15,16 +15,16 @@ mod util;
 
 use bevy::prelude::*;
 
-use asset_loaders::{maps, EmbeddedAssetLoader, EmbeddedAssets};
-use camera::{FollowEntity, FollowedByCamera};
-use collision::{CollisionEvent, MoveableCollider};
+use asset_loaders::maps;
+use camera::FollowEntity;
+use collision::CollisionEvent;
 use maps::Map;
-use physics::{Gravity, VelocityMap};
+use physics::PhysicsPlugin;
 use player::{
     abilities::{
-        collectibles::CollectibleAbilityTrigger, PlayerDash, PlayerInventory, PlayerShoot,
+        collectibles::CollectibleAbilityTrigger, PlayerDash, PlayerShoot,
     },
-    MouseCursor, PlayerMovement, PlayerPlugin,
+    MouseCursor, PlayerPlugin,
 };
 
 const PLAYER_SIZE: f32 = 16.0;
@@ -32,16 +32,14 @@ const PLAYER_SIZE: f32 = 16.0;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .add_plugin(PhysicsPlugin)
         .add_plugin(PlayerPlugin)
         .add_startup_system(setup_system)
         .add_startup_system(grab_mouse)
         .add_system(combat::move_projectile_system)
         .add_system(camera::camera_follow_system)
-        .add_system(physics::gravity_system)
-        .add_system_to_stage(CoreStage::PostUpdate, physics::landing_system)
-        .add_system(collision::collision_system)
-        .add_system_to_stage(CoreStage::Last, physics::velocity_system)
-        .add_event::<CollisionEvent>()
+                .add_system(collision::collision_system)
+                .add_event::<CollisionEvent>()
         .insert_resource(maps::map_as_resource("maps/main.toml"))
         .run();
 }
@@ -60,7 +58,6 @@ pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<As
         .insert(FollowEntity);
 
     add_initial_room(&mut commands, &map, &mut assets);
-    add_player(&mut commands, &mut assets);
 
     commands
         .spawn_bundle(SpriteBundle {
@@ -108,35 +105,6 @@ fn add_initial_room(commands: &mut Commands, map: &Map, assets: &mut Assets<Imag
     if let Err(e) = maps::load_room_sprites(assets, commands, map, "tutorial", "room0") {
         panic!("Could not load initial room: {}", e);
     }
-}
-
-fn add_player(commands: &mut Commands, assets: &mut Assets<Image>) {
-    let texture =
-        EmbeddedAssets::load_image_as_asset(assets, "sprites/character/movement/idle.png")
-            .unwrap_or_else(|e| panic!("The player sprite could not be loaded: {}", e));
-
-    let mut vel_map = VelocityMap::new();
-    commands
-        .spawn_bundle(SpriteBundle {
-            sprite: Sprite {
-                custom_size: Some(Vec2::splat(PLAYER_SIZE)),
-                ..Default::default()
-            },
-            texture,
-            transform: Transform {
-                translation: Vec3::new(1.0 * PLAYER_SIZE, 4.0 * PLAYER_SIZE, 0.0),
-                ..Default::default()
-            },
-            ..Default::default()
-        })
-        .insert(FollowedByCamera)
-        .insert(PlayerMovement::new_in(&mut vel_map))
-        .insert(Gravity::new_in(&mut vel_map))
-        .insert(vel_map)
-        .insert(PlayerInventory::new())
-        .insert(MoveableCollider {
-            size: Vec2::splat(PLAYER_SIZE),
-        });
 }
 
 fn grab_mouse(mut windows: ResMut<Windows>) {

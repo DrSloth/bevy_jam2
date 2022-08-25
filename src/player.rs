@@ -3,17 +3,23 @@ pub mod abilities;
 use bevy::{prelude::*, sprite::collide_aabb::Collision};
 
 use crate::{
-    collision::CollisionEvent,
+    asset_loaders::{EmbeddedAssetLoader, EmbeddedAssets},
+    camera::FollowedByCamera,
+    collision::{CollisionEvent, MoveableCollider},
     physics::{Gravity, VelocityId, VelocityMap, GRAVITY},
+    PLAYER_SIZE,
 };
 use abilities::collectibles;
+
+use self::abilities::PlayerInventory;
 
 #[derive(Debug)]
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(player_input_system)
+        app.add_startup_system(player_setup_system)
+            .add_system(player_input_system)
             .add_system(player_jump_system)
             .add_system(player_land_system)
             .add_system(abilities::player_shoot_system)
@@ -25,16 +31,46 @@ impl Plugin for PlayerPlugin {
     }
 }
 
+fn player_setup_system(mut commands: Commands, mut assets: ResMut<Assets<Image>>) {
+    let texture =
+        EmbeddedAssets::load_image_as_asset(&mut assets, "sprites/character/movement/idle.png")
+            .unwrap_or_else(|e| panic!("The player sprite could not be loaded: {}", e));
+
+    let mut vel_map = VelocityMap::new();
+    commands
+        .spawn_bundle(SpriteBundle {
+            sprite: Sprite {
+                custom_size: Some(Vec2::splat(PLAYER_SIZE)),
+                ..Default::default()
+            },
+            texture,
+            transform: Transform {
+                translation: Vec3::new(1.0 * PLAYER_SIZE, 4.0 * PLAYER_SIZE, 0.0),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .insert(FollowedByCamera)
+        .insert(PlayerMovement::new_in(&mut vel_map))
+        .insert(Gravity::new_in(&mut vel_map))
+        .insert(vel_map)
+        .insert(PlayerInventory::new())
+        .insert(MoveableCollider {
+            size: Vec2::splat(PLAYER_SIZE),
+        });
+}
+
 #[derive(Debug)]
 pub struct JumpEvent(pub Entity);
 
 /// Component only added to the player character
 #[derive(Component, Debug)]
 pub struct PlayerMovement {
-    pub(crate) vel_id: VelocityId,
+    vel_id: VelocityId,
     //TODO maybe use a state machine
     can_jump: bool,
     can_move: bool,
+    pub velocity: Vec2,
 }
 
 impl PlayerMovement {
@@ -44,6 +80,7 @@ impl PlayerMovement {
             vel_id,
             can_jump: true,
             can_move: true,
+            velocity: Vec2::ZERO,
         }
     }
 
@@ -85,21 +122,19 @@ pub fn player_input_system(
 }
 
 pub fn player_jump_system(
-    mut player_query: Query<(&mut VelocityMap, &mut PlayerMovement, &Gravity)>,
+    mut player_query: Query<(&VelocityMap, &mut PlayerMovement, &Gravity)>,
     mut jump_event_reader: EventReader<JumpEvent>,
 ) {
     const JUMP_POWER: f32 = 1.2;
 
     for JumpEvent(entity) in jump_event_reader.iter() {
-        if let Ok((mut velocity_map, mut player_movement, grav)) = player_query.get_mut(*entity) {
-            let falling = grav_is_falling(grav, &*velocity_map);
+        if let Ok((vel_map, mut player_movement, grav)) = player_query.get_mut(*entity) {
+            let falling = grav_is_falling(grav, &*vel_map);
             let can_jump = !falling && player_movement.can_jump;
 
             if can_jump {
-                if let Some(vel) = velocity_map.get_mut(player_movement.vel_id) {
-                    vel.y = JUMP_POWER;
-                    player_movement.can_jump = false;
-                }
+                player_movement.velocity.y = JUMP_POWER;
+                player_movement.can_jump = false;
             }
         }
     }
