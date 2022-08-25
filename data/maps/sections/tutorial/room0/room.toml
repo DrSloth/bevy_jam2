@@ -1,7 +1,7 @@
 layers = 1
 
 [colors]
-"#000000" = "wall"
+"#ffffff" = "wall"
 
 [connections]
 room1 = "#ff0000"
