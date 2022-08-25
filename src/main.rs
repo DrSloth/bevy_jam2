@@ -22,11 +22,9 @@ use maps::Map;
 use physics::{Gravity, VelocityMap};
 use player::{
     abilities::{
-        self,
-        collectibles::{self, CollectibleAbilityTrigger},
-        PlayerDash, PlayerInventory, PlayerShoot,
+        collectibles::CollectibleAbilityTrigger, PlayerDash, PlayerInventory, PlayerShoot,
     },
-    JumpEvent, MouseCursor, PlayerMovement,
+    MouseCursor, PlayerMovement, PlayerPlugin,
 };
 
 const PLAYER_SIZE: f32 = 16.0;
@@ -34,24 +32,16 @@ const PLAYER_SIZE: f32 = 16.0;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .add_plugin(PlayerPlugin)
         .add_startup_system(setup_system)
         .add_startup_system(grab_mouse)
-        .add_system(camera::camera_follow_system)
-        .add_system(player::player_input_system)
-        .add_system(player::player_jump_system)
-        .add_system(player::player_land_system)
-        .add_system(abilities::player_shoot_system)
         .add_system(combat::move_projectile_system)
-        .add_system(collectibles::collect_ability_system)
-        .add_system_to_stage(CoreStage::PreUpdate, player::move_cursor_system)
-        .add_system_to_stage(CoreStage::PostUpdate, abilities::player_dash_system)
-        .add_system_to_stage(CoreStage::PostUpdate, player::player_fall_system)
+        .add_system(camera::camera_follow_system)
         .add_system(physics::gravity_system)
         .add_system_to_stage(CoreStage::PostUpdate, physics::landing_system)
         .add_system(collision::collision_system)
         .add_system_to_stage(CoreStage::Last, physics::velocity_system)
         .add_event::<CollisionEvent>()
-        .add_event::<JumpEvent>()
         .insert_resource(maps::map_as_resource("maps/main.toml"))
         .run();
 }

@@ -6,6 +6,24 @@ use crate::{
     collision::CollisionEvent,
     physics::{Gravity, VelocityId, VelocityMap, GRAVITY},
 };
+use abilities::collectibles;
+
+#[derive(Debug)]
+pub struct PlayerPlugin;
+
+impl Plugin for PlayerPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_system(player_input_system)
+            .add_system(player_jump_system)
+            .add_system(player_land_system)
+            .add_system(abilities::player_shoot_system)
+            .add_system(collectibles::collect_ability_system)
+            .add_system_to_stage(CoreStage::PreUpdate, move_cursor_system)
+            .add_system_to_stage(CoreStage::PostUpdate, abilities::player_dash_system)
+            .add_system_to_stage(CoreStage::PostUpdate, player_fall_system)
+            .add_event::<JumpEvent>();
+    }
+}
 
 #[derive(Debug)]
 pub struct JumpEvent(pub Entity);
