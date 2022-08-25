@@ -1,9 +1,9 @@
 [sprites]
-brick = "sprites/world/tileset/solid_brick.png"
-cracked_brick = "sprites/world/tileset/cracked_brick.png"
-platform = "sprites/world/tileset/platform.png"
-fire_item = "sprites/items/fire.png"
-earth_item = "sprites/items/earth.png"
+brick = { path = "sprites/world/tileset/solid_brick.png"}
+cracked_brick = { path = "sprites/world/tileset/cracked_brick.png"}
+platform =  { path = "sprites/world/tileset/platform.png"}
+fire_item =  { path = "sprites/items/fire.png"}
+earth_item =  { path = "sprites/items/earth.png"}
 
 [sprites.border_edge_z0]
 sprite = "sprites/world/tileset/border_edge.png"
