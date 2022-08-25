@@ -225,7 +225,7 @@ pub fn player_shoot_system(
 #[derive(Component, Debug)]
 pub struct PlayerDash {
     last_dash: Instant,
-    pressed: bool,
+    dashed_once: bool,
 }
 
 impl Ability for PlayerDash {}
@@ -234,7 +234,7 @@ impl Default for PlayerDash {
     fn default() -> Self {
         Self {
             last_dash: Instant::now(),
-            pressed: false,
+            dashed_once: false,
         }
     }
 }
@@ -262,18 +262,18 @@ pub fn player_dash_system(
                 continue;
             }
 
-            if player_dash.last_dash.elapsed() < PLAYER_DASH_INTERVAL {
+            if player_dash.last_dash.elapsed() < PLAYER_DASH_INTERVAL && player_dash.dashed_once {
                 continue;
             }
 
             player_dash.last_dash = Instant::now();
-            player_dash.pressed = true;
+            player_dash.dashed_once = true;
         }
     }
 
     for (mut vel_map, player_dash, mut player, gravity, _) in player_query.iter_mut() {
         let elapsed = player_dash.last_dash.elapsed();
-        if elapsed > PLAYER_DASH_DURATION || !player_dash.pressed {
+        if elapsed > PLAYER_DASH_DURATION || !player_dash.dashed_once {
             player.can_move = true;
             continue;
         }
