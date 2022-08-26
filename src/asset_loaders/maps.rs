@@ -12,6 +12,7 @@ use crate::{
     asset_loaders::{AssetLoadError, EmbeddedAssetLoader, EmbeddedAssets, EmbeddedData},
     collision::{BreakableCollider, Collider},
     player::abilities::{collectibles::CollectibleAbilityTrigger, AbilityItem, ABILITY_MAP},
+    AssetCache,
 };
 
 const TILE_SIZE: f32 = 8.0;
@@ -67,6 +68,7 @@ pub enum LoadRoomError {
 }
 
 pub fn load_room_sprites(
+    asset_cache: &mut AssetCache<EmbeddedAssets>,
     assets: &mut Assets<Image>,
     commands: &mut Commands,
     map: &Map,
@@ -90,6 +92,7 @@ pub fn load_room_sprites(
         // .map(|variation| variation.iter())
         for (idx, layer) in (0i16..).zip(room.layers.iter().chain(variation_iter)) {
             load_layer_file(
+                asset_cache,
                 assets,
                 commands,
                 map,
@@ -117,6 +120,7 @@ pub enum LoadLayerError {
 }
 
 fn load_layer_file<P: AsRef<Path>>(
+    asset_cache: &mut AssetCache<EmbeddedAssets>,
     assets: &mut Assets<Image>,
     commands: &mut Commands,
     map: &Map,
@@ -155,8 +159,8 @@ fn load_layer_file<P: AsRef<Path>>(
                     0.0 - (f32::from(layer_idx)),
                 );
                 let mut tile = commands.spawn_bundle(SpriteBundle {
-                    // TODO: Optimize: Reuse already loaded assets by saving handles
-                    texture: EmbeddedAssets::load_image_as_asset(assets, sprite_path)
+                    texture: asset_cache
+                        .load_image(assets, sprite_path)
                         .map_err(LoadLayerError::LoadError)?,
                     sprite: Sprite {
                         custom_size: Some(size),

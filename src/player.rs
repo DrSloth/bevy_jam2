@@ -2,8 +2,9 @@ pub mod abilities;
 
 use bevy::{prelude::*, sprite::collide_aabb::Collision};
 
+use crate::asset_loaders::cache::AssetCache;
 use crate::{
-    asset_loaders::{EmbeddedAssetLoader, EmbeddedAssets},
+    asset_loaders::EmbeddedAssets,
     camera::FollowedByCamera,
     collision::{CollisionEvent, MoveableCollider},
     physics::{Gravity, VelocityId, VelocityMap, GRAVITY, VEL_SYSTEM_STAGE},
@@ -31,10 +32,14 @@ impl Plugin for PlayerPlugin {
     }
 }
 
-fn player_setup_system(mut commands: Commands, mut assets: ResMut<Assets<Image>>) {
-    let texture =
-        EmbeddedAssets::load_image_as_asset(&mut assets, "sprites/character/movement/idle.png")
-            .unwrap_or_else(|e| panic!("The player sprite could not be loaded: {}", e));
+fn player_setup_system(
+    mut commands: Commands,
+    mut asset_cache: ResMut<AssetCache<EmbeddedAssets>>,
+    mut assets: ResMut<Assets<Image>>,
+) {
+    let texture = asset_cache
+        .load_image(&mut assets, "sprites/character/movement/idle.png")
+        .unwrap_or_else(|e| panic!("The player sprite could not be loaded: {}", e));
 
     let mut vel_map = VelocityMap::new();
     commands

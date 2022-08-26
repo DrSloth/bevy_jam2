@@ -15,7 +15,7 @@ mod util;
 
 use bevy::prelude::*;
 
-use asset_loaders::maps;
+use asset_loaders::{cache::AssetCache, maps, EmbeddedAssets};
 use camera::FollowEntity;
 use collision::CollisionEvent;
 use maps::Map;
@@ -44,17 +44,19 @@ fn main() {
         .add_stage_after(VEL_MOVE_STAGE, CAMERA_MOVE_STAGE, SystemStage::parallel())
         .add_plugin(PlayerPlugin)
         .add_startup_system(setup_system)
+        .add_startup_system(initial_room_setup)
         .add_startup_system(grab_mouse)
         .add_system(combat::move_projectile_system)
         .add_system_to_stage(CAMERA_MOVE_STAGE, camera::camera_follow_system)
         .add_system(collision::collision_system)
         .add_event::<CollisionEvent>()
+        .insert_resource(AssetCache::<EmbeddedAssets>::new())
         .insert_resource(maps::map_as_resource("maps/main.toml"))
         .run();
 }
 
 /// Create the main game world
-pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<Assets<Image>>) {
+pub fn setup_system(mut commands: Commands) {
     commands
         .spawn_bundle(Camera2dBundle {
             projection: OrthographicProjection {
@@ -65,8 +67,6 @@ pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<As
             ..Default::default()
         })
         .insert(FollowEntity);
-
-    add_initial_room(&mut commands, &map, &mut assets);
 
     commands
         .spawn_bundle(SpriteBundle {
@@ -110,8 +110,21 @@ pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<As
         ));
 }
 
-fn add_initial_room(commands: &mut Commands, map: &Map, assets: &mut Assets<Image>) {
-    if let Err(e) = maps::load_room_sprites(assets, commands, map, "demo", "room0", Some(0)) {
+fn initial_room_setup(
+    mut commands: Commands,
+    map: Res<Map>,
+    mut asset_cache: ResMut<AssetCache<EmbeddedAssets>>,
+    mut assets: ResMut<Assets<Image>>,
+) {
+    if let Err(e) = maps::load_room_sprites(
+        &mut asset_cache,
+        &mut assets,
+        &mut commands,
+        &map,
+        "demo",
+        "room0",
+        Some(0),
+    ) {
         panic!("Could not load initial room: {}", e);
     }
 }
