@@ -13,11 +13,11 @@ mod physics;
 mod player;
 mod util;
 
-use bevy::prelude::*;
+use bevy::{prelude::*, sprite::Mesh2dHandle};
 
 use asset_loaders::maps;
 use camera::FollowEntity;
-use collision::CollisionEvent;
+use collision::{Collider, CollisionEvent, LineStart, Line};
 use maps::Map;
 use physics::{PhysicsPlugin, VEL_MOVE_STAGE};
 use player::{
@@ -54,19 +54,21 @@ fn main() {
 }
 
 /// Create the main game world
-pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<Assets<Image>>) {
-    commands
-        .spawn_bundle(Camera2dBundle {
-            projection: OrthographicProjection {
-                scale: 0.2,
-                ..Default::default()
-            },
-            transform: Transform::from_xyz(0.0, 0.0, 10.0),
+pub fn setup_system(
+    mut commands: Commands,
+    map: Res<Map>,
+    mut assets: ResMut<Assets<Image>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+) {
+    commands.spawn_bundle(Camera2dBundle {
+        projection: OrthographicProjection {
+            scale: 0.2,
             ..Default::default()
-        })
-        .insert(FollowEntity);
-
-    add_initial_room(&mut commands, &map, &mut assets);
+        },
+        transform: Transform::from_xyz(0.0, 0.0, 10.0),
+        ..Default::default()
+    });
+    // .insert(FollowEntity);
 
     commands
         .spawn_bundle(SpriteBundle {
@@ -79,35 +81,84 @@ pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<As
         })
         .insert(MouseCursor);
 
+    add_initial_room(&mut commands, &map, &mut assets);
+    
     commands
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
-                color: Color::rgb(0.2, 0.2, 1.0),
+                color: Color::rgb(0.0, 0.0, 1.0),
                 custom_size: Some(Vec2::new(4.0, 4.0)),
                 ..Default::default()
             },
-            transform: Transform::from_xyz(58.0, 55.0, 0.0),
+            transform: Transform::from_xyz(-13.0, 0.0, 0.0),
             ..Default::default()
         })
-        .insert(CollectibleAbilityTrigger::new::<PlayerShoot>(
-            Vec2::new(40.0, 600.0),
-            Vec3::new(0.0, 0.0, 0.0),
-        ));
+        .insert(LineStart);
+
+    commands.spawn_bundle(ColorMesh2dBundle {
+        mesh: Mesh2dHandle(meshes.add(Mesh::from(shape::Quad {
+            size: Vec2::splat(1.5),
+            ..Default::default()
+        }))),
+        transform: Transform::from_xyz(10.0,0.0,0.0),
+        ..Default::default()
+    }).insert(Line);
 
     commands
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
-                color: Color::rgb(0.2, 0.2, 1.0),
+                color: Color::rgb(1.0, 0.0, 0.0),
                 custom_size: Some(Vec2::new(4.0, 4.0)),
                 ..Default::default()
             },
-            transform: Transform::from_xyz(5.0, 55.0, 0.0),
+            transform: Transform::from_xyz(20.0, 0.0, 0.0),
             ..Default::default()
         })
-        .insert(CollectibleAbilityTrigger::new::<PlayerDash>(
-            Vec2::new(40.0, 600.0),
-            Vec3::new(0.0, 0.0, 0.0),
-        ));
+        .insert(Collider {
+            size: Vec2::splat(4.0),
+        });
+
+    commands
+        .spawn_bundle(SpriteBundle {
+            sprite: Sprite {
+                color: Color::rgb(1.0, 0.0, 0.0),
+                custom_size: Some(Vec2::new(4.0, 4.0)),
+                ..Default::default()
+            },
+            transform: Transform::from_xyz(0.0, -20.0, 0.0),
+            ..Default::default()
+        })
+        .insert(Collider {
+            size: Vec2::splat(4.0),
+        });
+
+    commands
+        .spawn_bundle(SpriteBundle {
+            sprite: Sprite {
+                color: Color::rgb(1.0, 0.0, 0.0),
+                custom_size: Some(Vec2::new(4.0, 4.0)),
+                ..Default::default()
+            },
+            transform: Transform::from_xyz(-20.0, 0.0, 0.0),
+            ..Default::default()
+        })
+        .insert(Collider {
+            size: Vec2::splat(4.0),
+        });
+
+    commands
+        .spawn_bundle(SpriteBundle {
+            sprite: Sprite {
+                color: Color::rgb(1.0, 0.0, 0.0),
+                custom_size: Some(Vec2::new(4.0, 4.0)),
+                ..Default::default()
+            },
+            transform: Transform::from_xyz(0.0, 20.0, 0.0),
+            ..Default::default()
+        })
+        .insert(Collider {
+            size: Vec2::splat(4.0),
+        });
 }
 
 fn add_initial_room(commands: &mut Commands, map: &Map, assets: &mut Assets<Image>) {
