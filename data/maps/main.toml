@@ -81,9 +81,23 @@ item = "earth"
 
 [sprites.fire_item]
 sprite = "sprites/items/fire.png"
+item = "fire"
 
 [sprites.water_item]
 sprite = "sprites/items/water.png"
+#item = "water"
+
+[sprites.stone_item]
+sprite = "sprites/items/stone.png"
+#item = "stone"
+
+[sprites.steam_item]
+sprite = "sprites/items/steam.png"
+#item = "steam"
+
+[sprites.ice_item]
+sprite = "sprites/items/ice.png"
+#item = "ice"
 
 [sprites.slime_enemy]
 sprite = "sprites/enemies/slime.png"
