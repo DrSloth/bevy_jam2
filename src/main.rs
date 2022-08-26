@@ -51,7 +51,7 @@ fn main() {
         .add_system(collision::collision_system)
         .add_event::<CollisionEvent>()
         .insert_resource(AssetCache::<EmbeddedAssets>::new())
-        .insert_resource(maps::map_as_resource("maps/main.toml"))
+        .insert_resource(maps::load_map("maps/main.toml"))
         .run();
 }
 

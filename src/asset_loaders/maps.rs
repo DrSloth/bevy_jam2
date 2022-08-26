@@ -43,12 +43,17 @@ pub struct Room {
     layers: Vec<String>,
     #[serde(default)]
     variations: Vec<Vec<String>>,
-    // TODO: Implement connections
-    // #[serde(rename = "connections")]
-    // _connections: HashMap<String, String>,
+    connections: HashMap<String, NextRoom>,
 }
 
-pub fn map_as_resource(filename: &str) -> Map {
+#[derive(Deserialize, Debug)]
+pub struct NextRoom {
+    section_id: String,
+    room_id: String,
+    variation: Option<usize>,
+}
+
+pub fn load_map(filename: &str) -> Map {
     match load_toml(filename) {
         Ok(map) => map,
         Err(e) => {
@@ -97,7 +102,7 @@ pub fn load_room_sprites(
                 commands,
                 map,
                 &section.colors,
-                // &room,
+                &room,
                 idx,
                 section_path.join(room_id).join(layer),
             )
@@ -125,7 +130,7 @@ fn load_layer_file<P: AsRef<Path>>(
     commands: &mut Commands,
     map: &Map,
     colors: &HashMap<String, String>,
-    // room: &Room,
+    room: &Room,
     layer_idx: i16,
     layer_path: P,
 ) -> Result<(), LoadLayerError> {
@@ -143,21 +148,22 @@ fn load_layer_file<P: AsRef<Path>>(
             let color_hex = format!("#{:02x}{:02x}{:02x}", pixel.0[0], pixel.0[1], pixel.0[2]);
             let sprite_id = colors
                 .get(&color_hex)
-                .ok_or(LoadLayerError::InvalidColor(color_hex))?;
+                .ok_or_else(|| LoadLayerError::InvalidColor(color_hex.clone()))?;
 
             let tile_config = map
                 .sprites
                 .get(sprite_id)
-                .ok_or_else(|| LoadLayerError::InvalidSprite(sprite_id.to_string()))?;
+                .ok_or_else(|| LoadLayerError::InvalidSprite(sprite_id.clone()))?;
 
+            #[allow(clippy::cast_precision_loss)] // NOTE Currently no better solution
+            let translation = Vec3::new(
+                (x as f32) * TILE_SIZE,
+                (y as f32) * TILE_SIZE,
+                0.0 - (f32::from(layer_idx)),
+            );
             let size = Vec2::splat(TILE_SIZE);
+
             if let Some(sprite_path) = &tile_config.sprite {
-                #[allow(clippy::cast_precision_loss)] // NOTE Currently no better solution
-                let translation = Vec3::new(
-                    (x as f32) * TILE_SIZE,
-                    (y as f32) * TILE_SIZE,
-                    0.0 - (f32::from(layer_idx)),
-                );
                 let mut tile = commands.spawn_bundle(SpriteBundle {
                     texture: asset_cache
                         .load_image(assets, sprite_path)
@@ -190,6 +196,21 @@ fn load_layer_file<P: AsRef<Path>>(
                         *item,
                     ));
                 }
+            }
+
+            if let Some(_next_room) = room.connections.get(&color_hex) {
+                commands.spawn_bundle(SpriteBundle {
+                    sprite: Sprite {
+                        custom_size: Some(size),
+                        color: Color::rgb(0.0, 1.0, 0.0),
+                        ..Default::default()
+                    },
+                    transform: Transform {
+                        translation,
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                });
             }
         }
     }

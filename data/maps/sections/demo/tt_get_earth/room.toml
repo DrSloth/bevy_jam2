@@ -1,3 +1,6 @@
 layers = ["borders.png", "bricks.png", "connections.png"]
 variations = [["breakable.png"]]
 
+[connections]
+"#000010" = { section_id = "demo", room_id = "hub" }
+"#000020" = { section_id = "demo", room_id = "tt_fall_lr_checkpoint" }
