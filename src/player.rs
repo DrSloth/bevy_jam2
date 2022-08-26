@@ -92,13 +92,13 @@ impl PlayerMovement {
 
 /// System to move the player with input
 pub fn player_input_system(
-    mut player_query: Query<(&mut PlayerMovement, Entity)>,
+    mut player_query: Query<(&mut PlayerMovement, &mut Transform, Entity)>,
     mut jump_event_writer: EventWriter<JumpEvent>,
     kb_input: ResMut<Input<KeyCode>>,
 ) {
     const SPEED: f32 = 2.0;
 
-    for (mut player, entity) in player_query.iter_mut() {
+    for (mut player, mut trans, entity) in player_query.iter_mut() {
         if !player.can_move {
             continue;
         }
@@ -106,8 +106,14 @@ pub fn player_input_system(
         player.velocity.x = 0.0;
         for key in kb_input.get_pressed() {
             match key {
-                KeyCode::A => player.velocity.x += -SPEED,
-                KeyCode::D => player.velocity.x += SPEED,
+                KeyCode::A => {
+                    trans.rotation = Quat::from_axis_angle(Vec3::Y, 180.0f32.to_radians());
+                    player.velocity.x += -SPEED;
+                }
+                KeyCode::D => {
+                    trans.rotation = Quat::from_axis_angle(Vec3::Y, 0.0f32.to_radians());
+                    player.velocity.x += SPEED
+                }
                 KeyCode::Space => jump_event_writer.send(JumpEvent(entity)),
                 _ => (),
             }

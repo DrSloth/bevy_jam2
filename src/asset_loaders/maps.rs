@@ -165,8 +165,8 @@ fn load_layer_file<P: AsRef<Path>>(
                     transform: Transform {
                         translation,
                         rotation: Quat::from_axis_angle(
-                            Vec3::Z,
-                            f32::from(tile_config.zrot.wrapping_neg()).to_radians(),
+                            Vec3::NEG_Z,
+                            f32::from(tile_config.zrot).to_radians(),
                         ),
                         ..Default::default()
                     },
