@@ -1,4 +1,4 @@
-sections = { tutorial = "maps/sections/tutorial/" }
+sections = { demo = "maps/sections/demo/" }
 
 [sprites]
 [sprites.brick]
