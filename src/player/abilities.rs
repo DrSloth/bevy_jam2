@@ -1,10 +1,18 @@
+//! Implementation of abilities.
+//!
+//! ## Terms
+//! - Skill => The actual usable skill like dashing/double jump etc.
+//! - Ability => An ability like Fire/Earth
+//!     - The complete system of collecting items, using skills
+//! - Item => The collectible item which is stored in the invetory as ability
+
 mod skills;
 
 pub mod collectibles;
 
 pub use skills::*;
 
-use bevy::{ecs::system::EntityCommands, prelude::*, sprite::collide_aabb, utils::Instant};
+use bevy::{ecs::system::EntityCommands, prelude::*, utils::{Instant, HashMap}, sprite::collide_aabb, render::once_cell::sync::Lazy};
 use std::{
     any::TypeId,
     fmt::{self, Debug, Formatter},
@@ -12,13 +20,27 @@ use std::{
 };
 
 use super::MouseCursor;
-use crate::{
-    collision::{BreakableCollider, Collider},
-    combat::Projectile,
-    physics::VelocityMap,
-};
+use crate::{combat::Projectile, physics::VelocityMap, collision::{Collider, BreakableCollider}};
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+// NOTE this would be nice if it was const (phf_map)
+pub static ABILITY_MAP: Lazy<HashMap<AbilityItem, AbilityDescriptor>> = Lazy::new(|| {
+    let mut map = HashMap::new();
+    map.insert(AbilityItem::Fire, PlayerDash::descriptor());
+    map.insert(AbilityItem::Earth, PlayerShoot::descriptor());
+    
+    map
+});
+
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Eq, Hash, Clone, Copy)]
+#[serde(rename_all = "snake_case")]
+pub enum AbilityItem {
+    Fire, 
+    Earth,
+    Water,
+}
+
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct AbilityId(TypeId);
 
 pub trait Ability: Component + Default + Sized + 'static {
@@ -45,7 +67,7 @@ pub trait Ability: Component + Default + Sized + 'static {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct AbilityDescriptor {
     id: AbilityId,
     unequip: fn(&mut EntityCommands, &mut PlayerInventory),
@@ -220,7 +242,9 @@ pub fn player_shoot_system(
                         ..Default::default()
                     })
                     .insert(VelocityMap::new())
-                    .insert(PlayerShotProjectile { size })
+                    .insert(PlayerShotProjectile {
+                        size
+                    })
                     .insert(projectile);
             }
         }
@@ -246,9 +270,7 @@ pub fn player_shot_destroy_walls_system(
                 shot.size,
                 wall_trans.translation,
                 wall_coll.size,
-            )
-            .is_some()
-            {
+            ).is_some() {
                 commands.entity(shot_entity).despawn();
                 commands.entity(wall_entity).despawn();
             }

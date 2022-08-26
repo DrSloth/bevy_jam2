@@ -77,6 +77,7 @@ sprite = "sprites/world/checkpoint/checkpoint3.png"
 
 [sprites.earth_item]
 sprite = "sprites/items/earth.png"
+item = "earth"
 
 [sprites.fire_item]
 sprite = "sprites/items/fire.png"

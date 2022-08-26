@@ -11,6 +11,7 @@ use thiserror::Error;
 use crate::{
     asset_loaders::{AssetLoadError, EmbeddedAssetLoader, EmbeddedAssets, EmbeddedData},
     collision::{BreakableCollider, Collider},
+    player::abilities::{collectibles::CollectibleAbilityTrigger, AbilityItem, ABILITY_MAP},
 };
 
 const TILE_SIZE: f32 = 8.0;
@@ -28,6 +29,7 @@ pub struct TileConfig {
     zrot: i16,
     #[serde(default)]
     breakable: bool,
+    item: Option<AbilityItem>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -175,6 +177,14 @@ fn load_layer_file<P: AsRef<Path>>(
 
                 if tile_config.breakable {
                     tile.insert(BreakableCollider);
+                }
+
+                if let Some(item) = tile_config.item.and_then(|item| ABILITY_MAP.get(&item)) {
+                    tile.insert(CollectibleAbilityTrigger::new_with_descriptor(
+                        Vec2::new(32.0, 64.0),
+                        Vec3::ZERO,
+                        *item,
+                    ));
                 }
             }
         }
