@@ -122,7 +122,7 @@ fn initial_room_setup(
         &mut commands,
         &map,
         "demo",
-        "room0",
+        "tt_get_earth",
         Some(0),
     ) {
         panic!("Could not load initial room: {}", e);
