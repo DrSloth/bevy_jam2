@@ -19,27 +19,36 @@ use asset_loaders::maps;
 use camera::FollowEntity;
 use collision::CollisionEvent;
 use maps::Map;
-use physics::PhysicsPlugin;
+use physics::{PhysicsPlugin, VEL_MOVE_STAGE};
 use player::{
-    abilities::{
-        collectibles::CollectibleAbilityTrigger, PlayerDash, PlayerShoot,
-    },
+    abilities::{collectibles::CollectibleAbilityTrigger, PlayerDash, PlayerShoot},
     MouseCursor, PlayerPlugin,
 };
 
 const PLAYER_SIZE: f32 = 16.0;
 
+/// Stage to move the camera in (TODO)
+pub const CAMERA_MOVE_STAGE: &str = "cam_mov";
+/// Stage run before `PostUpdate` (before transforms get propagated)
+pub const LATE_UPDATE_STAGE: &str = "late_upd";
+
 fn main() {
     App::new()
+        .add_stage_before(
+            CoreStage::PostUpdate,
+            LATE_UPDATE_STAGE,
+            SystemStage::parallel(),
+        )
         .add_plugins(DefaultPlugins)
         .add_plugin(PhysicsPlugin)
+        .add_stage_after(VEL_MOVE_STAGE, CAMERA_MOVE_STAGE, SystemStage::parallel())
         .add_plugin(PlayerPlugin)
         .add_startup_system(setup_system)
         .add_startup_system(grab_mouse)
         .add_system(combat::move_projectile_system)
-        .add_system(camera::camera_follow_system)
-                .add_system(collision::collision_system)
-                .add_event::<CollisionEvent>()
+        .add_system_to_stage(CAMERA_MOVE_STAGE, camera::camera_follow_system)
+        .add_system(collision::collision_system)
+        .add_event::<CollisionEvent>()
         .insert_resource(maps::map_as_resource("maps/main.toml"))
         .run();
 }
@@ -102,7 +111,7 @@ pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<As
 }
 
 fn add_initial_room(commands: &mut Commands, map: &Map, assets: &mut Assets<Image>) {
-    if let Err(e) = maps::load_room_sprites(assets, commands, map, "tutorial", "room0", None) {
+    if let Err(e) = maps::load_room_sprites(assets, commands, map, "tutorial", "room0", Some(0)) {
         panic!("Could not load initial room: {}", e);
     }
 }

@@ -7,7 +7,7 @@ use crate::{
     camera::FollowedByCamera,
     collision::{CollisionEvent, MoveableCollider},
     physics::{Gravity, VelocityId, VelocityMap, GRAVITY, VEL_SYSTEM_STAGE},
-    PLAYER_SIZE,
+    LATE_UPDATE_STAGE, PLAYER_SIZE,
 };
 use abilities::{collectibles, PlayerInventory};
 
@@ -24,8 +24,8 @@ impl Plugin for PlayerPlugin {
             .add_system(collectibles::collect_ability_system)
             .add_system(abilities::player_shot_destroy_walls_system)
             .add_system_to_stage(CoreStage::PreUpdate, move_cursor_system)
-            .add_system_to_stage(CoreStage::PostUpdate, abilities::player_dash_system)
-            .add_system_to_stage(CoreStage::PostUpdate, player_fall_system)
+            .add_system_to_stage(LATE_UPDATE_STAGE, abilities::player_dash_system)
+            .add_system_to_stage(LATE_UPDATE_STAGE, player_fall_system)
             .add_system_to_stage(VEL_SYSTEM_STAGE, add_player_velocity_system)
             .add_event::<JumpEvent>();
     }
@@ -96,7 +96,7 @@ pub fn player_input_system(
     mut jump_event_writer: EventWriter<JumpEvent>,
     kb_input: ResMut<Input<KeyCode>>,
 ) {
-    const SPEED: f32 = 2.0;
+    const SPEED: f32 = 3.5;
 
     for (mut player, mut trans, entity) in player_query.iter_mut() {
         if !player.can_move {
@@ -112,7 +112,7 @@ pub fn player_input_system(
                 }
                 KeyCode::D => {
                     trans.rotation = Quat::from_axis_angle(Vec3::Y, 0.0f32.to_radians());
-                    player.velocity.x += SPEED
+                    player.velocity.x += SPEED;
                 }
                 KeyCode::Space => jump_event_writer.send(JumpEvent(entity)),
                 _ => (),
@@ -200,7 +200,7 @@ pub struct MouseCursor;
 /// Moves the cursor
 pub fn move_cursor_system(
     mut cursor_query: Query<&mut Transform, With<MouseCursor>>,
-    camera_query: Query<(&Camera, &GlobalTransform)>,
+    camera_query: Query<(&Camera, &Transform), Without<MouseCursor>>,
     windows: Res<Windows>,
 ) {
     const MOUSE_Z_POS: f32 = 7.0;
@@ -208,9 +208,13 @@ pub fn move_cursor_system(
     for mut cursor_transform in cursor_query.iter_mut() {
         match camera_query.get_single() {
             Ok((camera, camera_transform)) => {
-                let win = windows.get_primary().unwrap_or_else(|| panic!("No window"));
+                let win = if let Some(win) = windows.get_primary() {
+                    win
+                } else {
+                    return;
+                };
                 if let Some(cursor_pos) = win.cursor_position() {
-                    let window_size = Vec2::new(win.height(), win.height());
+                    let window_size = Vec2::new(win.width(), win.height());
                     let ndc = (cursor_pos / window_size) * 2.0 - Vec2::ONE;
                     let ndc_to_world =
                         camera_transform.compute_matrix() * camera.projection_matrix().inverse();

@@ -12,7 +12,13 @@ pub mod collectibles;
 
 pub use skills::*;
 
-use bevy::{ecs::system::EntityCommands, prelude::*, utils::{Instant, HashMap}, sprite::collide_aabb, render::once_cell::sync::Lazy};
+use bevy::{
+    ecs::system::EntityCommands,
+    prelude::*,
+    render::once_cell::sync::Lazy,
+    sprite::collide_aabb,
+    utils::{HashMap, Instant},
+};
 use std::{
     any::TypeId,
     fmt::{self, Debug, Formatter},
@@ -20,21 +26,25 @@ use std::{
 };
 
 use super::MouseCursor;
-use crate::{combat::Projectile, physics::VelocityMap, collision::{Collider, BreakableCollider}};
+use crate::{
+    collision::{BreakableCollider, Collider},
+    combat::Projectile,
+    physics::VelocityMap,
+};
 
 // NOTE this would be nice if it was const (phf_map)
 pub static ABILITY_MAP: Lazy<HashMap<AbilityItem, AbilityDescriptor>> = Lazy::new(|| {
     let mut map = HashMap::new();
     map.insert(AbilityItem::Fire, PlayerDash::descriptor());
     map.insert(AbilityItem::Earth, PlayerShoot::descriptor());
-    
+
     map
 });
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Eq, Hash, Clone, Copy)]
 #[serde(rename_all = "snake_case")]
 pub enum AbilityItem {
-    Fire, 
+    Fire,
     Earth,
     Water,
 }
@@ -241,9 +251,7 @@ pub fn player_shoot_system(
                         ..Default::default()
                     })
                     .insert(VelocityMap::new())
-                    .insert(PlayerShotProjectile {
-                        size
-                    })
+                    .insert(PlayerShotProjectile { size })
                     .insert(projectile);
             }
         }
@@ -269,7 +277,9 @@ pub fn player_shot_destroy_walls_system(
                 shot.size,
                 wall_trans.translation,
                 wall_coll.size,
-            ).is_some() {
+            )
+            .is_some()
+            {
                 commands.entity(shot_entity).despawn();
                 commands.entity(wall_entity).despawn();
             }
