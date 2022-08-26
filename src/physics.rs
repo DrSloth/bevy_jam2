@@ -1,8 +1,12 @@
 use bevy::{prelude::*, sprite::collide_aabb::Collision};
 
-use crate::collision::{CollisionEvent, MoveableCollider};
+use crate::{
+    collision::{CollisionEvent, MoveableCollider},
+    LATE_UPDATE_STAGE,
+};
 
 pub const VEL_SYSTEM_STAGE: &str = "vel_sys";
+pub const VEL_MOVE_STAGE: &str = "vel_mov";
 pub const GRAVITY: f32 = 1.0;
 pub const GRAVITY_MAX: f32 = -8.7;
 
@@ -12,14 +16,11 @@ pub struct PhysicsPlugin;
 impl Plugin for PhysicsPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(gravity_system)
-            .add_stage_after(
-                CoreStage::PostUpdate,
-                VEL_SYSTEM_STAGE,
-                SystemStage::parallel(),
-            )
+            .add_stage_after(LATE_UPDATE_STAGE, VEL_SYSTEM_STAGE, SystemStage::parallel())
+            .add_stage_after(VEL_SYSTEM_STAGE, VEL_MOVE_STAGE, SystemStage::parallel())
             .add_system_to_stage(VEL_SYSTEM_STAGE, add_gravity_velocity_system)
-            .add_system_to_stage(CoreStage::PostUpdate, landing_system)
-            .add_system_to_stage(CoreStage::Last, velocity_system);
+            .add_system_to_stage(LATE_UPDATE_STAGE, landing_system)
+            .add_system_to_stage(VEL_MOVE_STAGE, velocity_system);
     }
 }
 
