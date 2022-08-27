@@ -15,15 +15,14 @@ mod util;
 
 use bevy::prelude::*;
 
+use bevy_framepace::{FramepacePlugin, FramepaceSettings, Limiter};
+
 use asset_loaders::{cache::AssetCache, maps, EmbeddedAssets};
 use camera::FollowEntity;
 use collision::CollisionEvent;
 use maps::Map;
 use physics::{PhysicsPlugin, VEL_MOVE_STAGE};
-use player::{
-    abilities::{collectibles::CollectibleAbilityTrigger, PlayerDash, PlayerShoot},
-    MouseCursor, PlayerPlugin,
-};
+use player::{MouseCursor, PlayerPlugin};
 
 const PLAYER_SIZE: f32 = 16.0;
 
@@ -32,31 +31,37 @@ pub const CAMERA_MOVE_STAGE: &str = "cam_mov";
 /// Stage run before `PostUpdate` (before transforms get propagated)
 pub const LATE_UPDATE_STAGE: &str = "late_upd";
 
+const COLLISION_STAGE: &str = "coll_stage";
+
 fn main() {
     App::new()
+        .add_plugins(DefaultPlugins)
         .add_stage_before(
             CoreStage::PostUpdate,
             LATE_UPDATE_STAGE,
             SystemStage::parallel(),
         )
-        .add_plugins(DefaultPlugins)
+        .add_plugin(FramepacePlugin)
         .add_plugin(PhysicsPlugin)
         .add_stage_after(VEL_MOVE_STAGE, CAMERA_MOVE_STAGE, SystemStage::parallel())
+        .add_stage_after(VEL_MOVE_STAGE, COLLISION_STAGE, SystemStage::parallel())
         .add_plugin(PlayerPlugin)
         .add_startup_system(setup_system)
         .add_startup_system(initial_room_setup)
         .add_startup_system(grab_mouse)
         .add_system(combat::move_projectile_system)
         .add_system_to_stage(CAMERA_MOVE_STAGE, camera::camera_follow_system)
-        .add_system(collision::collision_system)
+        .add_system_to_stage(COLLISION_STAGE, collision::collision_system)
         .add_event::<CollisionEvent>()
         .insert_resource(AssetCache::<EmbeddedAssets>::new())
-        .insert_resource(maps::map_as_resource("maps/main.toml"))
+        .insert_resource(maps::load_map("maps/main.toml"))
         .run();
 }
 
 /// Create the main game world
-pub fn setup_system(mut commands: Commands) {
+pub fn setup_system(mut commands: Commands, mut framepace: ResMut<FramepaceSettings>) {
+    framepace.limiter = Limiter::from_framerate(27.0);
+
     commands
         .spawn_bundle(Camera2dBundle {
             projection: OrthographicProjection {
@@ -86,7 +91,7 @@ fn initial_room_setup(
     mut asset_cache: ResMut<AssetCache<EmbeddedAssets>>,
     mut assets: ResMut<Assets<Image>>,
 ) {
-    if let Err(e) = maps::load_room_sprites(
+    if let Err(e) = maps::load_room(
         &mut asset_cache,
         &mut assets,
         &mut commands,

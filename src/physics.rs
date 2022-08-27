@@ -60,9 +60,9 @@ impl VelocityMap {
         self.map.get_mut(id.0)
     }
 
-    // pub fn last_velocity(&self) -> Vec2 {
-    //     self.last_velocity
-    // }
+    pub fn last_velocity(&self) -> Vec2 {
+        self.last_velocity
+    }
 
     pub fn get(&self, id: VelocityId) -> Option<Vec2> {
         self.map.get(id.0).copied()
@@ -132,7 +132,7 @@ pub fn landing_system(
             _ => continue,
         }
 
-        if let Ok(mut grav) = query.get_mut(evt.entity) {
+        if let Ok(mut grav) = query.get_mut(evt.moving_entity) {
             grav.velocity = Vec2::ZERO;
         }
     }
