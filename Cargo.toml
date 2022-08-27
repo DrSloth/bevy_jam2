@@ -8,6 +8,9 @@ edition = "2021"
 [dependencies]
 bevy = { version = "0.8.0", features = ["dynamic"] }
 
+# bevy utility
+bevy_framepace = "0.6.0"
+
 # Error handling
 thiserror = "1.0.32"
 anyhow = "1.0.62"

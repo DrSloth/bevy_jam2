@@ -1,7 +1,8 @@
 use bevy::{prelude::*, sprite::collide_aabb};
 
-use super::{AbilityDescriptor, PlayerInventory};
 use crate::collision::MoveableCollider;
+
+use super::{Ability, AbilityDescriptor, PlayerInventory};
 
 #[derive(Component, Debug)]
 pub struct CollectibleAbilityTrigger {
@@ -11,9 +12,9 @@ pub struct CollectibleAbilityTrigger {
 }
 
 impl CollectibleAbilityTrigger {
-    // pub fn new<T: Ability>(size: Vec2, offset: Vec3) -> Self {
-    //     Self::new_with_descriptor(size, offset, T::descriptor())
-    // }
+    pub fn new<T: Ability>(size: Vec2, offset: Vec3) -> Self {
+        Self::new_with_descriptor(size, offset, T::descriptor())
+    }
 
     pub fn new_with_descriptor(size: Vec2, offset: Vec3, ability: AbilityDescriptor) -> Self {
         Self {

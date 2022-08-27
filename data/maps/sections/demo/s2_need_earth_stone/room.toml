@@ -1,0 +1,4 @@
+layers = ["borders.png", "bricks.png", "connections.png", "collisions.png", "enemies.png"]
+variations = [["breakables.png"]]
+collisions = {"collisions.png" = true}
+uncleared = 0
