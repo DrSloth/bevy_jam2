@@ -27,7 +27,7 @@ pub trait EmbeddedAssetLoader {
         assets: &mut Assets<Image>,
         path: P,
     ) -> Result<Handle<Image>, AssetLoadError>;
-    fn load_image<P: AsRef<Path>, I: Pixel + ImageConverter>(
+    fn load_image<I: Pixel + ImageConverter, P: AsRef<Path>,>(
         path: P,
     ) -> Result<I::Buffer, AssetLoadError>;
 }
@@ -72,7 +72,7 @@ impl<T: RustEmbed> EmbeddedAssetLoader for T {
         Ok(assets.add(image))
     }
 
-    fn load_image<P: AsRef<Path>, I: Pixel + ImageConverter>(
+    fn load_image<I: Pixel + ImageConverter, P: AsRef<Path>>(
         path: P,
     ) -> Result<I::Buffer, AssetLoadError> {
         let mut image = ImageReader::new(Cursor::new(Self::load(path)?));

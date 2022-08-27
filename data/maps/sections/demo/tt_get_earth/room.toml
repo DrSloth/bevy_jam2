@@ -1,8 +1,8 @@
 layers = ["borders.png", "bricks.png", "connections.png", "collisions.png"]
 variations = [["breakable_bottom.png", "breakable_right.png"]]
 collisions = {"collisions.png" = true}
+uncleared = 0
 
 [connections]
 "#000010" = { section_id = "demo", room_id = "hub" }
 "#000020" = { section_id = "demo", room_id = "tt_fall_lr_checkpoint" }
-uncleared = 0

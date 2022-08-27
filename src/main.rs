@@ -15,6 +15,8 @@ mod util;
 
 use bevy::prelude::*;
 
+use bevy_framepace::{FramepacePlugin, FramepaceSettings, Limiter};
+
 use asset_loaders::{cache::AssetCache, maps, EmbeddedAssets};
 use camera::FollowEntity;
 use collision::CollisionEvent;
@@ -33,12 +35,13 @@ const COLLISION_STAGE: &str = "coll_stage";
 
 fn main() {
     App::new()
+        .add_plugins(DefaultPlugins)
         .add_stage_before(
             CoreStage::PostUpdate,
             LATE_UPDATE_STAGE,
             SystemStage::parallel(),
         )
-        .add_plugins(DefaultPlugins)
+        .add_plugin(FramepacePlugin)
         .add_plugin(PhysicsPlugin)
         .add_stage_after(VEL_MOVE_STAGE, CAMERA_MOVE_STAGE, SystemStage::parallel())
         .add_stage_after(VEL_MOVE_STAGE, COLLISION_STAGE, SystemStage::parallel())
@@ -56,7 +59,9 @@ fn main() {
 }
 
 /// Create the main game world
-pub fn setup_system(mut commands: Commands) {
+pub fn setup_system(mut commands: Commands, mut framepace: ResMut<FramepaceSettings>) {
+    framepace.limiter = Limiter::from_framerate(27.0);
+    
     commands
         .spawn_bundle(Camera2dBundle {
             projection: OrthographicProjection {
@@ -86,7 +91,7 @@ fn initial_room_setup(
     mut asset_cache: ResMut<AssetCache<EmbeddedAssets>>,
     mut assets: ResMut<Assets<Image>>,
 ) {
-    if let Err(e) = maps::load_room_sprites(
+    if let Err(e) = maps::load_room(
         &mut asset_cache,
         &mut assets,
         &mut commands,

@@ -50,7 +50,9 @@ fn player_setup_system(
             },
             texture,
             transform: Transform {
-                translation: Vec3::new(10.0 * PLAYER_SIZE, 4.0 * PLAYER_SIZE, 0.0),
+                // translation: Vec3::new(10.0 * PLAYER_SIZE, 4.0 * PLAYER_SIZE, 0.0),
+                translation: Vec3::new(84.0, 197.0, 0.0),
+                // translation: Vec3::new(404.0, 12.0, 0.0),
                 ..Default::default()
             },
             ..Default::default()
@@ -131,7 +133,7 @@ pub fn player_jump_system(
     mut player_query: Query<(&VelocityMap, &mut PlayerMovement, &Gravity)>,
     mut jump_event_reader: EventReader<JumpEvent>,
 ) {
-    const JUMP_POWER: f32 = 7.5;
+    const JUMP_POWER: f32 = 16.5;
 
     for JumpEvent(entity) in jump_event_reader.iter() {
         if let Ok((vel_map, mut player_movement, grav)) = player_query.get_mut(*entity) {

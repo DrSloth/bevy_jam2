@@ -44,6 +44,7 @@ pub struct Room {
     #[serde(default)]
     variations: Vec<Vec<String>>,
     connections: HashMap<String, NextRoom>,
+    /// List of layers meant for collision
     #[serde(default)]
     collisions: HashMap<String, bool>,
 }
@@ -59,7 +60,7 @@ pub fn load_map(filename: &str) -> Map {
     match load_toml(filename) {
         Ok(map) => map,
         Err(e) => {
-            panic!("There was an error parsing the map: {}", e);
+            panic!("There was an error parsing map({}): {}", filename, e);
         }
     }
 }
@@ -74,7 +75,7 @@ pub enum LoadRoomError {
     LoadLayerError(LoadLayerError),
 }
 
-pub fn load_room_sprites(
+pub fn load_room(
     asset_cache: &mut AssetCache<EmbeddedAssets>,
     assets: &mut Assets<Image>,
     commands: &mut Commands,
@@ -96,23 +97,23 @@ pub fn load_room_sprites(
                 .iter()
         });
 
-        // .map(|variation| variation.iter())
         for (idx, layer) in (0i16..).zip(room.layers.iter().chain(variation_iter)) {
-            if room.collisions.contains_key(layer) {
-                continue;
+            if room.collisions.get(layer).map_or(false, |b| *b) {
+                load_collision_layer(section_path.join(room_id).join(layer), commands)
+                    .map_err(LoadRoomError::LoadLayerError)?;
+            } else {
+                load_layer(
+                    asset_cache,
+                    assets,
+                    commands,
+                    map,
+                    &section.colors,
+                    &room,
+                    -idx,
+                    section_path.join(room_id).join(layer),
+                )
+                .map_err(LoadRoomError::LoadLayerError)?;
             }
-            
-            load_layer_file(
-                asset_cache,
-                assets,
-                commands,
-                map,
-                &section.colors,
-                &room,
-                idx,
-                section_path.join(room_id).join(layer),
-            )
-            .map_err(LoadRoomError::LoadLayerError)?;
         }
         Ok(())
     } else {
@@ -130,18 +131,71 @@ pub enum LoadLayerError {
     InvalidSprite(String),
 }
 
-fn load_layer_file<P: AsRef<Path>>(
+fn load_collision_layer<P: AsRef<Path>>(
+    file_path: P,
+    commands: &mut Commands,
+) -> Result<(), LoadLayerError> {
+    let mut colliders: HashMap<Rgba<u8>, (i16, i16)> = HashMap::new();
+
+    let image =
+        EmbeddedData::load_image::<Rgba<u8>, P>(file_path).map_err(LoadLayerError::LoadError)?;
+
+    for (row, y) in image.rows().rev().zip(0i16..) {
+        for (pixel, x) in row.zip(0i16..) {
+            if pixel.0[3] != 0 {
+                println!("Got pixel at ({}, {})", x, y);
+                if let Some(pos) = colliders.remove(pixel) {
+                    dbg!(pos, (x, y));
+                    // Place collider
+                    let width = f32::from(pos.0 - x) * TILE_SIZE;
+                    let height = f32::from(y - pos.1 + 1) * TILE_SIZE;
+                    let center = Vec2::new(
+                        f32::from(x) * TILE_SIZE + width / 2.0,
+                        f32::from(pos.1) * TILE_SIZE + height / 2.0,
+                    );
+                    
+                    let size = Vec2::new(width + TILE_SIZE, height + TILE_SIZE);
+                    dbg!(width, height, center);
+                    commands
+                        // .spawn_bundle(TransformBundle {
+                        //     local: Transform::from_translation(center.extend(0.0)),
+                        //     ..Default::default()
+                        // })
+                        .spawn_bundle(SpriteBundle {
+                            transform: Transform::from_translation(center.extend(8.0)),
+                            ..Default::default()
+                        })
+                        .insert(Collider {
+                            size
+                        });
+
+                    println!(
+                        "Creating collider at {} with size {}",
+                        center,
+                        Vec2::new(width, height)
+                    );
+                } else {
+                    colliders.insert(*pixel, (x, y));
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn load_layer<P: AsRef<Path>>(
     asset_cache: &mut AssetCache<EmbeddedAssets>,
     assets: &mut Assets<Image>,
     commands: &mut Commands,
     map: &Map,
     colors: &HashMap<String, String>,
     room: &Room,
-    layer_idx: i16,
+    z_index: i16,
     layer_path: P,
 ) -> Result<(), LoadLayerError> {
     let image =
-        EmbeddedData::load_image::<P, Rgba<u8>>(layer_path).map_err(LoadLayerError::LoadError)?;
+        EmbeddedData::load_image::<Rgba<u8>, P>(layer_path).map_err(LoadLayerError::LoadError)?;
     for (i, pixel) in image.pixels().enumerate() {
         let i: u32 = i
             .try_into()
@@ -150,6 +204,7 @@ fn load_layer_file<P: AsRef<Path>>(
         let y = image
             .height()
             .saturating_sub(i.saturating_div(image.width()));
+
         if pixel.0[3] != 0 {
             let color_hex = format!("#{:02x}{:02x}{:02x}", pixel.0[0], pixel.0[1], pixel.0[2]);
             let sprite_id = colors
@@ -165,15 +220,17 @@ fn load_layer_file<P: AsRef<Path>>(
             let translation = Vec3::new(
                 (x as f32) * TILE_SIZE,
                 (y as f32) * TILE_SIZE,
-                0.0 - (f32::from(layer_idx)),
+                f32::from(z_index),
             );
             let size = Vec2::splat(TILE_SIZE);
 
             if let Some(sprite_path) = &tile_config.sprite {
+                let texture = asset_cache
+                    .load_image(assets, sprite_path)
+                    .map_err(LoadLayerError::LoadError)?;
+
                 let mut tile = commands.spawn_bundle(SpriteBundle {
-                    texture: asset_cache
-                        .load_image(assets, sprite_path)
-                        .map_err(LoadLayerError::LoadError)?,
+                    texture,
                     sprite: Sprite {
                         custom_size: Some(size),
                         ..Default::default()
@@ -189,7 +246,7 @@ fn load_layer_file<P: AsRef<Path>>(
                     ..Default::default()
                 });
 
-                tile.insert(Collider { size });
+                // tile.insert(Collider { size });
 
                 if tile_config.breakable {
                     tile.insert(BreakableCollider);
