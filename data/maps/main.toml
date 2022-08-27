@@ -8,7 +8,7 @@ sprite = "sprites/world/tileset/solid_brick.png"
 sprite = "sprites/world/tileset/cracked_brick.png"
 breakable = true
 
-sprites.cracked_brick_permanent]
+[nsprites.cracked_brick_permanent]
 sprite = "sprites/world/tileset/cracked_brick.png"
 breakable = true
 permanent = true
