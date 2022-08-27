@@ -1,1 +1,2 @@
- 
+ layers = ["borders.png", "bricks.png", "connections.png","collisions.png"]
+collisions = {"collisions.png" = true}
