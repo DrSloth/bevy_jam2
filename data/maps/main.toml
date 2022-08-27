@@ -202,3 +202,10 @@ connection = true
 [sprites.connection_left]
 connection = true
 
+
+
+
+
+
+[connections]
+"#000010" = {room = ""}

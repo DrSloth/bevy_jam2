@@ -1,2 +1,5 @@
 layers = ["borders.png", "bricks.png", "connections.png","collisions.png"]
 collisions = {"collisions.png" = true}
+
+[connections]
+"#000010" = {room = "tt_need_earth"}
