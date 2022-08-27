@@ -78,8 +78,6 @@ pub fn setup_system(mut commands: Commands) {
             ..Default::default()
         })
         .insert(MouseCursor);
-
-    add_initial_room(&mut commands, &map, &mut assets);
 }
 
 fn initial_room_setup(
