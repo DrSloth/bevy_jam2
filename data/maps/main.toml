@@ -8,8 +8,16 @@ sprite = "sprites/world/tileset/solid_brick.png"
 sprite = "sprites/world/tileset/cracked_brick.png"
 breakable = true
 
+sprites.cracked_brick_permanent]
+sprite = "sprites/world/tileset/cracked_brick.png"
+breakable = true
+permanent = true
+
 [sprites.platform]
 sprite = "sprites/world/tileset/platform.png"
+
+[sprites.gate]
+sprite = "sprites/world/gate.png"
 
 
 [sprites.border_edge_z0]

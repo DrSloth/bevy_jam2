@@ -1,7 +1,9 @@
 [colors]
 "#ffffff" = "brick"
 "#ffffbb" = "cracked_brick"
+"#ffff00" = "ncracked_brick_permanent"
 "#ffff88" = "platform"
+"#ffff44" = "gate"
 "#ffbb00" = "border_edge_z0"
 "#ffbb44" = "border_edge_z90"
 "#ffbb88" = "border_edge_z180"
