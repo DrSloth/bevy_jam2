@@ -1,5 +1,6 @@
-layers = ["borders.png", "bricks.png", "connections.png"]
-variations = [["breakable.png"]]
+layers = ["borders.png", "bricks.png", "connections.png","collisions.png"]
+variations = [["breakable_bottom.png", "breakable_right.png"]]
+collisions = {"collisions.png" = true}
 
 [connections]
 "#000010" = { section_id = "demo", room_id = "hub" }

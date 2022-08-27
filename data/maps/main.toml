@@ -75,6 +75,7 @@ sprite = "sprites/world/checkpoint/checkpoint2.png"
 [sprites.checkpoint3]
 sprite = "sprites/world/checkpoint/checkpoint3.png"
 
+
 [sprites.earth_item]
 sprite = "sprites/items/earth.png"
 item = "earth"
@@ -99,6 +100,7 @@ sprite = "sprites/items/steam.png"
 sprite = "sprites/items/ice.png"
 #item = "ice"
 
+
 [sprites.slime_enemy]
 sprite = "sprites/enemies/slime.png"
 
@@ -107,6 +109,26 @@ sprite = "sprites/enemies/skeleton.png"
 
 [sprites.ghost_enemy]
 sprite = "sprites/enemies/ghost.png"
+
+
+[sprites.pillar_top]
+sprite = "sprites/world/pillar/pillar_top.png"
+collision = false
+
+[sprites.pillar_body]
+sprite = "sprites/world/pillar/pillar_body.png"
+collision = false
+
+[sprites.pillar_bottom]
+sprite = "sprites/world/pillar/pillar_bottom.png"
+collision = false
+
+[sprites.combine_altar]
+sprite = "sprites/world/combine_altar.png"
+
+[sprites.water_platform]
+sprite = "sprites/world/tileset/water_platform.png"
+freezeable = true
 
 [sprites.connection_up]
 [sprites.connection_right]

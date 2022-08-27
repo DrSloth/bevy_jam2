@@ -1,0 +1,3 @@
+layers = ["borders.png", "bricks.png", "connections.png","collisions.png"]
+variations = [["breakable"]]
+collisions = {"collisions.png" = true}
