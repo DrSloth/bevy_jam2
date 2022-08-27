@@ -20,6 +20,15 @@
 "#ff0044" = "border_threeway_corner_z90"
 "#ff0088" = "border_threeway_corner_z180"
 "#ff00bb" = "border_threeway_corner_z270"
+"#ff00ff" = "border_edge_inner_corner_z0"
+"#ff44ff" = "border_edge_inner_corner_z90"
+"#ff88ff" = "border_edge_inner_corner_z180"
+"#ffbbff" = "border_edge_inner_corner_z270"
+"#f000ff" = "border_edge_inner_corner_mirrored_z0"
+"#f044ff" = "border_edge_inner_corner_mirrored_z90"
+"#f088ff" = "border_edge_inner_corner_mirrored_z180"
+"#f0bbff" = "border_edge_inner_corner_mirrored_z270"
+
 
 "#ee0000" = "earth_item"
 "#ee0011" = "fire_item"
