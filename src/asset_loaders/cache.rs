@@ -7,7 +7,7 @@ use std::{
 use crate::asset_loaders::{AssetLoadError, EmbeddedAssetLoader};
 
 pub struct AssetCache<T: EmbeddedAssetLoader> {
-    _phantom: PhantomData<T>,
+    _phantom: PhantomData<fn(T) -> T>,
     cache: HashMap<PathBuf, Handle<Image>>,
 }
 
@@ -26,11 +26,11 @@ impl<T: EmbeddedAssetLoader> AssetCache<T> {
     ) -> Result<Handle<Image>, AssetLoadError> {
         match self.cache.get(path.as_ref()) {
             Some(handle) => {
-                println!("Getting {:?} from cache", path.as_ref());
+                // println!("Getting {:?} from cache", path.as_ref());
                 Ok(assets.get_handle(handle))
             }
             None => {
-                println!("Loading {:?} to cache", path.as_ref());
+                // println!("Loading {:?} to cache", path.as_ref());
                 let handle = T::load_image_as_asset(assets, path.as_ref())?;
                 let h = assets.get_handle(&handle);
                 self.cache.insert(path.as_ref().to_path_buf(), handle);

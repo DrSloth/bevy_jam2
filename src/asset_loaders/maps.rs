@@ -44,6 +44,8 @@ pub struct Room {
     #[serde(default)]
     variations: Vec<Vec<String>>,
     connections: HashMap<String, NextRoom>,
+    #[serde(default)]
+    collisions: HashMap<String, bool>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -96,6 +98,10 @@ pub fn load_room_sprites(
 
         // .map(|variation| variation.iter())
         for (idx, layer) in (0i16..).zip(room.layers.iter().chain(variation_iter)) {
+            if room.collisions.contains_key(layer) {
+                continue;
+            }
+            
             load_layer_file(
                 asset_cache,
                 assets,
