@@ -72,6 +72,21 @@ zrot = 180
 sprite = "sprites/world/tileset/border_inner_corner.png"
 zrot = 270
 
+[sprites.threeway_corner_z0]
+sprite = "sprites/world/tileset/border_threeway_corner.png"
+zrot = 0
+
+[sprites.threeway_corner_z90]
+sprite = "sprites/world/tileset/border_threeway_corner.png"
+zrot = 90
+
+[sprites.threeway_corner_z180]
+sprite = "sprites/world/tileset/border_threeway_corner.png"
+zrot = 180
+
+[sprites.threeway_corner_z270]
+sprite = "sprites/world/tileset/border_threeway_corner.png"
+zrot = 270
 
 [sprites.checkpoint0]
 sprite = "sprites/world/checkpoint/checkpoint0.png"

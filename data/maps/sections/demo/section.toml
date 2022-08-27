@@ -16,6 +16,11 @@
 "#ff4444" = "border_inner_corner_z90"
 "#ff4488" = "border_inner_corner_z180"
 "#ff44bb" = "border_inner_corner_z270"
+"#ff0000" = "border_threeway_corner_z0"
+"#ff0044" = "border_threeway_corner_z90"
+"#ff0088" = "border_threeway_corner_z180"
+"#ff00bb" = "border_threeway_corner_z270"
+
 "#ee0000" = "earth_item"
 "#ee0011" = "fire_item"
 "#ee0022" = "water_item"
