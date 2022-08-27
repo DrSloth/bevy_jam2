@@ -13,17 +13,14 @@ mod physics;
 mod player;
 mod util;
 
-use bevy::{prelude::*, sprite::Mesh2dHandle};
+use bevy::prelude::*;
 
 use asset_loaders::maps;
 use camera::FollowEntity;
-use collision::{Collider, CollisionEvent, LineStart, Line};
+use collision::CollisionEvent;
 use maps::Map;
 use physics::{PhysicsPlugin, VEL_MOVE_STAGE};
-use player::{
-    abilities::{collectibles::CollectibleAbilityTrigger, PlayerDash, PlayerShoot},
-    MouseCursor, PlayerPlugin,
-};
+use player::{MouseCursor, PlayerPlugin};
 
 const PLAYER_SIZE: f32 = 16.0;
 
@@ -31,6 +28,8 @@ const PLAYER_SIZE: f32 = 16.0;
 pub const CAMERA_MOVE_STAGE: &str = "cam_mov";
 /// Stage run before `PostUpdate` (before transforms get propagated)
 pub const LATE_UPDATE_STAGE: &str = "late_upd";
+
+const COLLISION_STAGE: &str = "coll_stage";
 
 fn main() {
     App::new()
@@ -42,33 +41,30 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(PhysicsPlugin)
         .add_stage_after(VEL_MOVE_STAGE, CAMERA_MOVE_STAGE, SystemStage::parallel())
+        .add_stage_after(VEL_MOVE_STAGE, COLLISION_STAGE, SystemStage::parallel())
         .add_plugin(PlayerPlugin)
         .add_startup_system(setup_system)
         .add_startup_system(grab_mouse)
         .add_system(combat::move_projectile_system)
         .add_system_to_stage(CAMERA_MOVE_STAGE, camera::camera_follow_system)
-        .add_system(collision::collision_system)
+        .add_system_to_stage(COLLISION_STAGE, collision::collision_system)
         .add_event::<CollisionEvent>()
         .insert_resource(maps::map_as_resource("maps/main.toml"))
         .run();
 }
 
 /// Create the main game world
-pub fn setup_system(
-    mut commands: Commands,
-    map: Res<Map>,
-    mut assets: ResMut<Assets<Image>>,
-    mut meshes: ResMut<Assets<Mesh>>,
-) {
-    commands.spawn_bundle(Camera2dBundle {
-        projection: OrthographicProjection {
-            scale: 0.2,
+pub fn setup_system(mut commands: Commands, map: Res<Map>, mut assets: ResMut<Assets<Image>>) {
+    commands
+        .spawn_bundle(Camera2dBundle {
+            projection: OrthographicProjection {
+                scale: 0.2,
+                ..Default::default()
+            },
+            transform: Transform::from_xyz(0.0, 0.0, 10.0),
             ..Default::default()
-        },
-        transform: Transform::from_xyz(0.0, 0.0, 10.0),
-        ..Default::default()
-    });
-    // .insert(FollowEntity);
+        })
+        .insert(FollowEntity);
 
     commands
         .spawn_bundle(SpriteBundle {
@@ -82,83 +78,6 @@ pub fn setup_system(
         .insert(MouseCursor);
 
     add_initial_room(&mut commands, &map, &mut assets);
-    
-    commands
-        .spawn_bundle(SpriteBundle {
-            sprite: Sprite {
-                color: Color::rgb(0.0, 0.0, 1.0),
-                custom_size: Some(Vec2::new(4.0, 4.0)),
-                ..Default::default()
-            },
-            transform: Transform::from_xyz(-13.0, 0.0, 0.0),
-            ..Default::default()
-        })
-        .insert(LineStart);
-
-    commands.spawn_bundle(ColorMesh2dBundle {
-        mesh: Mesh2dHandle(meshes.add(Mesh::from(shape::Quad {
-            size: Vec2::splat(1.5),
-            ..Default::default()
-        }))),
-        transform: Transform::from_xyz(10.0,0.0,0.0),
-        ..Default::default()
-    }).insert(Line);
-
-    commands
-        .spawn_bundle(SpriteBundle {
-            sprite: Sprite {
-                color: Color::rgb(1.0, 0.0, 0.0),
-                custom_size: Some(Vec2::new(4.0, 4.0)),
-                ..Default::default()
-            },
-            transform: Transform::from_xyz(20.0, 0.0, 0.0),
-            ..Default::default()
-        })
-        .insert(Collider {
-            size: Vec2::splat(4.0),
-        });
-
-    commands
-        .spawn_bundle(SpriteBundle {
-            sprite: Sprite {
-                color: Color::rgb(1.0, 0.0, 0.0),
-                custom_size: Some(Vec2::new(4.0, 4.0)),
-                ..Default::default()
-            },
-            transform: Transform::from_xyz(0.0, -20.0, 0.0),
-            ..Default::default()
-        })
-        .insert(Collider {
-            size: Vec2::splat(4.0),
-        });
-
-    commands
-        .spawn_bundle(SpriteBundle {
-            sprite: Sprite {
-                color: Color::rgb(1.0, 0.0, 0.0),
-                custom_size: Some(Vec2::new(4.0, 4.0)),
-                ..Default::default()
-            },
-            transform: Transform::from_xyz(-20.0, 0.0, 0.0),
-            ..Default::default()
-        })
-        .insert(Collider {
-            size: Vec2::splat(4.0),
-        });
-
-    commands
-        .spawn_bundle(SpriteBundle {
-            sprite: Sprite {
-                color: Color::rgb(1.0, 0.0, 0.0),
-                custom_size: Some(Vec2::new(4.0, 4.0)),
-                ..Default::default()
-            },
-            transform: Transform::from_xyz(0.0, 20.0, 0.0),
-            ..Default::default()
-        })
-        .insert(Collider {
-            size: Vec2::splat(4.0),
-        });
 }
 
 fn add_initial_room(commands: &mut Commands, map: &Map, assets: &mut Assets<Image>) {

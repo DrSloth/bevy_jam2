@@ -19,7 +19,7 @@ impl Plugin for PlayerPlugin {
         app.add_startup_system(player_setup_system)
             .add_system(player_input_system)
             .add_system(player_jump_system)
-            .add_system(player_land_system)
+            .add_system(player_collision_system)
             .add_system(abilities::player_shoot_system)
             .add_system(collectibles::collect_ability_system)
             .add_system(abilities::player_shot_destroy_walls_system)
@@ -45,7 +45,7 @@ fn player_setup_system(mut commands: Commands, mut assets: ResMut<Assets<Image>>
             },
             texture,
             transform: Transform {
-                translation: Vec3::new(6.0 * PLAYER_SIZE, 4.0 * PLAYER_SIZE, 0.0),
+                translation: Vec3::new(10.0 * PLAYER_SIZE, 4.0 * PLAYER_SIZE, 0.0),
                 ..Default::default()
             },
             ..Default::default()
@@ -56,7 +56,8 @@ fn player_setup_system(mut commands: Commands, mut assets: ResMut<Assets<Image>>
         .insert(vel_map)
         .insert(PlayerInventory::new())
         .insert(MoveableCollider {
-            size: Vec2::splat(PLAYER_SIZE),
+            size: Vec2::new(PLAYER_SIZE / 1.2, PLAYER_SIZE),
+            collision_offset: Vec2::new(PLAYER_SIZE / 8.5, PLAYER_SIZE / 3.0),
         });
 }
 
@@ -140,13 +141,13 @@ pub fn player_jump_system(
     }
 }
 
-pub fn player_land_system(
+pub fn player_collision_system(
     mut collision_event_reader: EventReader<CollisionEvent>,
     mut player_query: Query<(&mut PlayerMovement, &Gravity, &VelocityMap)>,
 ) {
     for collision in collision_event_reader.iter() {
         if let Collision::Top = collision.collision {
-            if let Ok((mut player, grav, vel_map)) = player_query.get_mut(collision.entity) {
+            if let Ok((mut player, grav, vel_map)) = player_query.get_mut(collision.moving_entity) {
                 let player_y_speed = player.velocity.y.abs();
 
                 if let Some(grav_vel) = vel_map.get(grav.vel_id) {
@@ -154,6 +155,11 @@ pub fn player_land_system(
                         player.can_jump = true;
                     }
                 }
+            }
+        } else if let Collision::Bottom = collision.collision {
+            if let Ok((mut player, _grav, _vel_map)) = player_query.get_mut(collision.moving_entity)
+            {
+                player.velocity.y = 0.0;
             }
         }
     }
