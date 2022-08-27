@@ -7,14 +7,17 @@ sprite = "sprites/world/tileset/solid_brick.png"
 [sprites.cracked_brick]
 sprite = "sprites/world/tileset/cracked_brick.png"
 breakable = true
+collision = 0b1111
 
 [sprites.cracked_brick_permanent]
 sprite = "sprites/world/tileset/cracked_brick.png"
 breakable = true
 permanent = true
+collision = 0b1111
 
 [sprites.platform]
 sprite = "sprites/world/tileset/platform.png"
+collision = 0b1000
 
 [sprites.gate]
 sprite = "sprites/world/gate.png"
@@ -75,16 +78,19 @@ zrot = 270
 
 [sprites.checkpoint0]
 sprite = "sprites/world/checkpoint/checkpoint0.png"
+checkpoint = true
 
 [sprites.checkpoint1]
 sprite = "sprites/world/checkpoint/checkpoint1.png"
+checkpoint = true
 
 [sprites.checkpoint2]
 sprite = "sprites/world/checkpoint/checkpoint2.png"
+checkpoint = true
 
 [sprites.checkpoint3]
 sprite = "sprites/world/checkpoint/checkpoint3.png"
-
+checkpoint = true
 
 [sprites.earth_item]
 sprite = "sprites/items/earth.png"
@@ -123,15 +129,12 @@ sprite = "sprites/enemies/ghost.png"
 
 [sprites.pillar_top]
 sprite = "sprites/world/pillar/pillar_top.png"
-collision = false
 
 [sprites.pillar_body]
 sprite = "sprites/world/pillar/pillar_body.png"
-collision = false
 
 [sprites.pillar_bottom]
 sprite = "sprites/world/pillar/pillar_bottom.png"
-collision = false
 
 [sprites.combine_altar]
 sprite = "sprites/world/combine_altar.png"
@@ -141,7 +144,14 @@ sprite = "sprites/world/tileset/water_platform.png"
 freezeable = true
 
 [sprites.connection_up]
+connection = true
+
 [sprites.connection_right]
+connection = true
+
 [sprites.connection_down]
+connection = true
+
 [sprites.connection_left]
+connection = true
 

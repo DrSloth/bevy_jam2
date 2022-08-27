@@ -1,8 +1,5 @@
 use bevy::{prelude::*, utils::HashMap};
-use std::{
-    ops::Rem,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 
 use image::Rgba;
 use serde::{de::DeserializeOwned, Deserialize};
@@ -10,7 +7,7 @@ use thiserror::Error;
 
 use crate::{
     asset_loaders::{AssetLoadError, EmbeddedAssetLoader, EmbeddedAssets, EmbeddedData},
-    collision::{BreakableCollider, Collider},
+    collision::{BreakableCollider, Collider, CollisionFilter},
     player::abilities::{collectibles::CollectibleAbilityTrigger, AbilityItem, ABILITY_MAP},
     AssetCache,
 };
@@ -31,6 +28,7 @@ pub struct TileConfig {
     #[serde(default)]
     breakable: bool,
     item: Option<AbilityItem>,
+    collision: Option<CollisionFilter>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -148,26 +146,20 @@ fn load_collision_layer<P: AsRef<Path>>(
                     dbg!(pos, (x, y));
                     // Place collider
                     let width = f32::from(pos.0 - x) * TILE_SIZE;
-                    let height = f32::from(y - pos.1 + 1) * TILE_SIZE;
+                    let height = f32::from(y - pos.1) * TILE_SIZE;
                     let center = Vec2::new(
                         f32::from(x) * TILE_SIZE + width / 2.0,
                         f32::from(pos.1) * TILE_SIZE + height / 2.0,
                     );
-                    
+
                     let size = Vec2::new(width + TILE_SIZE, height + TILE_SIZE);
                     dbg!(width, height, center);
                     commands
-                        // .spawn_bundle(TransformBundle {
-                        //     local: Transform::from_translation(center.extend(0.0)),
-                        //     ..Default::default()
-                        // })
-                        .spawn_bundle(SpriteBundle {
-                            transform: Transform::from_translation(center.extend(8.0)),
+                        .spawn_bundle(TransformBundle {
+                            local: Transform::from_translation(center.extend(0.0)),
                             ..Default::default()
                         })
-                        .insert(Collider {
-                            size
-                        });
+                        .insert(Collider { size, filter: CollisionFilter::ALL });
 
                     println!(
                         "Creating collider at {} with size {}",
@@ -196,84 +188,79 @@ fn load_layer<P: AsRef<Path>>(
 ) -> Result<(), LoadLayerError> {
     let image =
         EmbeddedData::load_image::<Rgba<u8>, P>(layer_path).map_err(LoadLayerError::LoadError)?;
-    for (i, pixel) in image.pixels().enumerate() {
-        let i: u32 = i
-            .try_into()
-            .unwrap_or_else(|e| panic!("Could not convert usize to u32: {}", e));
-        let x = i.rem(image.width());
-        let y = image
-            .height()
-            .saturating_sub(i.saturating_div(image.width()));
+    for (row, y) in image.rows().rev().zip(0i16..) {
+        for (pixel, x) in row.zip(0i16..) {
+            if pixel.0[3] != 0 {
+                let color_hex = format!("#{:02x}{:02x}{:02x}", pixel.0[0], pixel.0[1], pixel.0[2]);
+                let sprite_id = colors
+                    .get(&color_hex)
+                    .ok_or_else(|| LoadLayerError::InvalidColor(color_hex.clone()))?;
 
-        if pixel.0[3] != 0 {
-            let color_hex = format!("#{:02x}{:02x}{:02x}", pixel.0[0], pixel.0[1], pixel.0[2]);
-            let sprite_id = colors
-                .get(&color_hex)
-                .ok_or_else(|| LoadLayerError::InvalidColor(color_hex.clone()))?;
+                let tile_config = map
+                    .sprites
+                    .get(sprite_id)
+                    .ok_or_else(|| LoadLayerError::InvalidSprite(sprite_id.clone()))?;
 
-            let tile_config = map
-                .sprites
-                .get(sprite_id)
-                .ok_or_else(|| LoadLayerError::InvalidSprite(sprite_id.clone()))?;
+                let translation = Vec3::new(
+                    f32::from(x) * TILE_SIZE,
+                    f32::from(y) * TILE_SIZE,
+                    f32::from(z_index),
+                );
+                let size = Vec2::splat(TILE_SIZE);
 
-            #[allow(clippy::cast_precision_loss)] // NOTE Currently no better solution
-            let translation = Vec3::new(
-                (x as f32) * TILE_SIZE,
-                (y as f32) * TILE_SIZE,
-                f32::from(z_index),
-            );
-            let size = Vec2::splat(TILE_SIZE);
+                if let Some(sprite_path) = &tile_config.sprite {
+                    let texture = asset_cache
+                        .load_image(assets, sprite_path)
+                        .map_err(LoadLayerError::LoadError)?;
 
-            if let Some(sprite_path) = &tile_config.sprite {
-                let texture = asset_cache
-                    .load_image(assets, sprite_path)
-                    .map_err(LoadLayerError::LoadError)?;
-
-                let mut tile = commands.spawn_bundle(SpriteBundle {
-                    texture,
-                    sprite: Sprite {
-                        custom_size: Some(size),
+                    let mut tile = commands.spawn_bundle(SpriteBundle {
+                        texture,
+                        sprite: Sprite {
+                            custom_size: Some(size),
+                            ..Default::default()
+                        },
+                        transform: Transform {
+                            translation,
+                            rotation: Quat::from_axis_angle(
+                                Vec3::NEG_Z,
+                                f32::from(tile_config.zrot).to_radians(),
+                            ),
+                            ..Default::default()
+                        },
                         ..Default::default()
-                    },
-                    transform: Transform {
-                        translation,
-                        rotation: Quat::from_axis_angle(
-                            Vec3::NEG_Z,
-                            f32::from(tile_config.zrot).to_radians(),
-                        ),
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                });
+                    });
 
-                // tile.insert(Collider { size });
+                    if let Some(filter) = tile_config.collision {
+                        tile.insert(Collider { size, filter });
+                    }
 
-                if tile_config.breakable {
-                    tile.insert(BreakableCollider);
+                    if tile_config.breakable {
+                        tile.insert(BreakableCollider);
+                    }
+
+                    if let Some(item) = tile_config.item.and_then(|item| ABILITY_MAP.get(&item)) {
+                        tile.insert(CollectibleAbilityTrigger::new_with_descriptor(
+                            Vec2::new(32.0, 64.0),
+                            Vec3::ZERO,
+                            *item,
+                        ));
+                    }
                 }
 
-                if let Some(item) = tile_config.item.and_then(|item| ABILITY_MAP.get(&item)) {
-                    tile.insert(CollectibleAbilityTrigger::new_with_descriptor(
-                        Vec2::new(32.0, 64.0),
-                        Vec3::ZERO,
-                        *item,
-                    ));
+                if let Some(_next_room) = room.connections.get(&color_hex) {
+                    commands.spawn_bundle(SpriteBundle {
+                        sprite: Sprite {
+                            custom_size: Some(size),
+                            color: Color::rgb(0.0, 1.0, 0.0),
+                            ..Default::default()
+                        },
+                        transform: Transform {
+                            translation,
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    });
                 }
-            }
-
-            if let Some(_next_room) = room.connections.get(&color_hex) {
-                commands.spawn_bundle(SpriteBundle {
-                    sprite: Sprite {
-                        custom_size: Some(size),
-                        color: Color::rgb(0.0, 1.0, 0.0),
-                        ..Default::default()
-                    },
-                    transform: Transform {
-                        translation,
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                });
             }
         }
     }

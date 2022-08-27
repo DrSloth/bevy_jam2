@@ -1,6 +1,9 @@
 //! Simple implementation of collisions
 
+use std::ops::{BitAnd, BitOr, Not};
+
 use bevy::{prelude::*, sprite::collide_aabb::Collision};
+use serde::{Deserialize, Serialize};
 
 use crate::physics::VelocityMap;
 
@@ -25,6 +28,16 @@ impl CollisionEvent {
 #[derive(Component, Debug)]
 pub struct Collider {
     pub size: Vec2,
+    pub filter: CollisionFilter,
+}
+
+impl Default for Collider {
+    fn default() -> Self {
+        Self {
+            size: Vec2::ZERO,
+            filter: CollisionFilter::ALL,
+        }
+    }
 }
 
 /// A movable collider which should not pass through
@@ -37,6 +50,67 @@ pub struct MoveableCollider {
     /// If for instance collision from top is measured, the finite line used for intersection
     /// is extended by `collision_offset.x` to the left AND the right
     pub collision_offset: Vec2,
+}
+
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
+#[serde(transparent)]
+pub struct CollisionFilter(u8);
+
+impl CollisionFilter {
+    pub const TOP: Self = Self(0b1000);
+    pub const RIGHT: Self = Self(0b0100);
+    pub const BOTTOM: Self = Self(0b0010);
+    pub const LEFT: Self = Self(0b0001);
+    pub const ALL: Self = Self(0xF);
+
+    // pub fn with(self, other: Self) -> Self {
+    //     self | other
+    // }
+
+    pub fn collides_at(self, other: CollisionFilter) -> bool {
+        (self & other).0 == other.0
+    }
+
+    pub fn collides_top(self) -> bool {
+        self.collides_at(Self::TOP)
+    }
+
+    pub fn collides_right(self) -> bool {
+        self.collides_at(Self::RIGHT)
+    }
+
+    pub fn collides_bottom(self) -> bool {
+        self.collides_at(Self::BOTTOM)
+    }
+
+    pub fn collides_left(self) -> bool {
+        self.collides_at(Self::LEFT)
+    }
+
+    // pub fn collides_all(self) -> bool {
+    //     self.collides_at(Self::ALL)
+    // }
+}
+
+impl BitOr for CollisionFilter {
+    type Output = Self;
+    fn bitor(self, rhs: Self) -> Self::Output {
+        Self(self.0 | rhs.0)
+    }
+}
+
+impl BitAnd for CollisionFilter {
+    type Output = Self;
+    fn bitand(self, rhs: Self) -> Self::Output {
+        Self(self.0 & rhs.0)
+    }
+}
+
+impl Not for CollisionFilter {
+    type Output = Self;
+    fn not(self) -> Self::Output {
+        Self(!self.0 & 0xF)
+    }
 }
 
 #[allow(clippy::too_many_lines)] // NOTE may be changed later
@@ -69,7 +143,8 @@ pub fn collision_system(
             let collision_offset = moving_collider.collision_offset;
 
             // TODO maybe extract some more (be careful PERFORMANCE!)
-            if coll_center.x > start_pos.x
+            if collider.filter.collides_left()
+                && coll_center.x > start_pos.x
                 && top_left.x >= start_pos.x
                 && top_left.x <= end_pos.x + moving_coll_offset.x
             {
@@ -104,7 +179,8 @@ pub fn collision_system(
                 }
             }
 
-            if coll_center.y < start_pos.y
+            if collider.filter.collides_top()
+                && coll_center.y < start_pos.y
                 && top_left.y <= start_pos.y
                 && top_left.y >= end_pos.y - moving_coll_offset.y
             {
@@ -139,29 +215,32 @@ pub fn collision_system(
                 }
             }
 
-            if let Some(coll_right) = check_collide_right(
-                coll_center,
-                start_pos,
-                end_pos,
-                moving_coll_offset,
-                bottom_right,
-                top_right,
-                collision_offset,
-            ) {
-                wcollision_events.send(CollisionEvent::new(
-                    Collision::Right,
-                    moving_entity,
-                    static_entity,
-                ));
+            if collider.filter.collides_right() {
+                if let Some(coll_right) = check_collide_right(
+                    coll_center,
+                    start_pos,
+                    end_pos,
+                    moving_coll_offset,
+                    bottom_right,
+                    top_right,
+                    collision_offset,
+                ) {
+                    wcollision_events.send(CollisionEvent::new(
+                        Collision::Right,
+                        moving_entity,
+                        static_entity,
+                    ));
 
-                if (coll_right - start_pos.x).abs() < (next_pos.x - start_pos.x).abs() {
-                    next_pos.x = coll_right;
+                    if (coll_right - start_pos.x).abs() < (next_pos.x - start_pos.x).abs() {
+                        next_pos.x = coll_right;
+                    }
                 }
             }
 
-            if coll_center.y > start_pos.y
-                && top_left.y >= start_pos.y
-                && top_left.y <= end_pos.y + moving_coll_offset.y * 2.0
+            if collider.filter.collides_bottom()
+                && coll_center.y > start_pos.y
+                && bottom_left.y >= start_pos.y
+                && bottom_left.y <= end_pos.y + moving_coll_offset.y
             {
                 let collision_bottom = line_intersection(
                     start_pos,
@@ -171,8 +250,8 @@ pub fn collision_system(
                 );
 
                 if let Some(intersection) = collision_bottom {
-                    if intersection.x >= top_left.x - collision_offset.x
-                        && intersection.x <= top_right.x + collision_offset.x
+                    if intersection.x >= bottom_left.x - collision_offset.x
+                        && intersection.x <= bottom_right.x + collision_offset.x
                         && ((intersection.x >= start_pos.x
                             && intersection.x <= end_pos.x + collision_offset.x)
                             || (intersection.x <= start_pos.x
