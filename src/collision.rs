@@ -160,8 +160,8 @@ pub fn collision_system(
             }
 
             if coll_center.y > start_pos.y
-                && top_left.y >= start_pos.y
-                && top_left.y <= end_pos.y + moving_coll_offset.y * 2.0
+                && bottom_left.y >= start_pos.y
+                && bottom_left.y <= end_pos.y + moving_coll_offset.y * 2.0
             {
                 let collision_bottom = line_intersection(
                     start_pos,
