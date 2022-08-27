@@ -20,10 +20,7 @@ use camera::FollowEntity;
 use collision::CollisionEvent;
 use maps::Map;
 use physics::{PhysicsPlugin, VEL_MOVE_STAGE};
-use player::{
-    abilities::{collectibles::CollectibleAbilityTrigger, PlayerDash, PlayerShoot},
-    MouseCursor, PlayerPlugin,
-};
+use player::{MouseCursor, PlayerPlugin};
 
 const PLAYER_SIZE: f32 = 16.0;
 
@@ -31,6 +28,8 @@ const PLAYER_SIZE: f32 = 16.0;
 pub const CAMERA_MOVE_STAGE: &str = "cam_mov";
 /// Stage run before `PostUpdate` (before transforms get propagated)
 pub const LATE_UPDATE_STAGE: &str = "late_upd";
+
+const COLLISION_STAGE: &str = "coll_stage";
 
 fn main() {
     App::new()
@@ -42,13 +41,14 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(PhysicsPlugin)
         .add_stage_after(VEL_MOVE_STAGE, CAMERA_MOVE_STAGE, SystemStage::parallel())
+        .add_stage_after(VEL_MOVE_STAGE, COLLISION_STAGE, SystemStage::parallel())
         .add_plugin(PlayerPlugin)
         .add_startup_system(setup_system)
         .add_startup_system(initial_room_setup)
         .add_startup_system(grab_mouse)
         .add_system(combat::move_projectile_system)
         .add_system_to_stage(CAMERA_MOVE_STAGE, camera::camera_follow_system)
-        .add_system(collision::collision_system)
+        .add_system_to_stage(COLLISION_STAGE, collision::collision_system)
         .add_event::<CollisionEvent>()
         .insert_resource(AssetCache::<EmbeddedAssets>::new())
         .insert_resource(maps::map_as_resource("maps/main.toml"))
@@ -79,35 +79,7 @@ pub fn setup_system(mut commands: Commands) {
         })
         .insert(MouseCursor);
 
-    commands
-        .spawn_bundle(SpriteBundle {
-            sprite: Sprite {
-                color: Color::rgb(0.2, 0.2, 1.0),
-                custom_size: Some(Vec2::new(4.0, 4.0)),
-                ..Default::default()
-            },
-            transform: Transform::from_xyz(58.0, 55.0, 0.0),
-            ..Default::default()
-        })
-        .insert(CollectibleAbilityTrigger::new::<PlayerShoot>(
-            Vec2::new(40.0, 600.0),
-            Vec3::new(0.0, 0.0, 0.0),
-        ));
-
-    commands
-        .spawn_bundle(SpriteBundle {
-            sprite: Sprite {
-                color: Color::rgb(0.2, 0.2, 1.0),
-                custom_size: Some(Vec2::new(4.0, 4.0)),
-                ..Default::default()
-            },
-            transform: Transform::from_xyz(5.0, 55.0, 0.0),
-            ..Default::default()
-        })
-        .insert(CollectibleAbilityTrigger::new::<PlayerDash>(
-            Vec2::new(40.0, 600.0),
-            Vec3::new(0.0, 0.0, 0.0),
-        ));
+    add_initial_room(&mut commands, &map, &mut assets);
 }
 
 fn initial_room_setup(

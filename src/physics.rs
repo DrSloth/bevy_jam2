@@ -9,6 +9,8 @@ pub const VEL_SYSTEM_STAGE: &str = "vel_sys";
 pub const VEL_MOVE_STAGE: &str = "vel_mov";
 pub const GRAVITY: f32 = 1.0;
 pub const GRAVITY_MAX: f32 = -8.7;
+// pub const GRAVITY: f32 = 981.0;
+// pub const GRAVITY_MAX: f32 = -420069.0;
 
 #[derive(Debug)]
 pub struct PhysicsPlugin;
@@ -60,9 +62,9 @@ impl VelocityMap {
         self.map.get_mut(id.0)
     }
 
-    // pub fn last_velocity(&self) -> Vec2 {
-    //     self.last_velocity
-    // }
+    pub fn last_velocity(&self) -> Vec2 {
+        self.last_velocity
+    }
 
     pub fn get(&self, id: VelocityId) -> Option<Vec2> {
         self.map.get(id.0).copied()
@@ -132,7 +134,7 @@ pub fn landing_system(
             _ => continue,
         }
 
-        if let Ok(mut grav) = query.get_mut(evt.entity) {
+        if let Ok(mut grav) = query.get_mut(evt.moving_entity) {
             grav.velocity = Vec2::ZERO;
         }
     }
