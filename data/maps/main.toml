@@ -163,6 +163,12 @@ sprite = "sprites/items/steam.png"
 sprite = "sprites/items/ice.png"
 #item = "ice"
 
+[sprites.reset_equipped_items]
+sprite = "sprites/world/reset_items.png"
+
+[sprites.return_from_cp]
+sprite = "sprites/world/return_from_cp.png"
+
 
 [sprites.slime_enemy]
 sprite = "sprites/enemies/slime.png"
@@ -201,10 +207,6 @@ connection = true
 
 [sprites.connection_left]
 connection = true
-
-
-
-
 
 
 [connections]

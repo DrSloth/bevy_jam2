@@ -4,6 +4,12 @@
 "#ffff00" = "cracked_brick_permanent"
 "#ffff88" = "platform"
 "#ffff44" = "gate"
+"#bb0000" = "pillar_body"
+"#bb0044" = "pillar_top"
+"#bb0088" = "pillar_bottom"
+"#bb00bb" = "combine_altar"
+"#0000aa" = "water_platform"
+
 "#ffbb00" = "border_edge_z0"
 "#ffbb44" = "border_edge_z90"
 "#ffbb88" = "border_edge_z180"
@@ -29,13 +35,15 @@
 "#f088ff" = "border_edge_inner_corner_mirrored_z180"
 "#f0bbff" = "border_edge_inner_corner_mirrored_z270"
 
-
 "#ee0000" = "earth_item"
 "#ee0011" = "fire_item"
 "#ee0022" = "water_item"
 "#ee0033" = "stone_item"
 "#ee0044" = "steam_item"
 "#ee0055" = "ice_item"
+"#ee00ff" = "reset_equipped_items"
+"#ee00ee" = "return_from_cp"
+
 "#dd0000" = "checkpoint0"
 "#dd0010" = "checkpoint1"
 "#dd0020" = "checkpoint2"
@@ -44,12 +52,8 @@
 "#000010" = "connection_right"
 "#000020" = "connection_down"
 "#000030" = "connection_left"
+
 "#cc0000" = "slime_enemy"
 "#cc0088" = "skeleton_enemy"
 "#cc00ff" = "ghost_enemy"
 "#cc8800" = "lavasnake"
-"#bb0000" = "pillar_body"
-"#bb0044" = "pillar_top"
-"#bb0088" = "pillar_bottom"
-"#bb00bb" = "combine_altar"
-"#0000aa" = "water_platform"
