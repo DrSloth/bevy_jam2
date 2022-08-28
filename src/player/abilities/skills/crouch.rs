@@ -2,7 +2,6 @@ use bevy::prelude::*;
 
 use crate::{
     collision::{BreakableCollider, MoveableCollider},
-    map::TILE_SIZE,
     physics::{Gravity, GRAVITY, GRAVITY_MAX},
     player::{
         abilities::{Ability, PlayerInventory},
@@ -85,7 +84,7 @@ pub fn player_crouch_system(
                             break;
                         }
 
-                        player_move.velocity.x = player_move.velocity.x / 2.0;
+                        player_move.velocity.x /= 2.0;
                         break;
                     }
                 }
@@ -105,7 +104,7 @@ pub fn crouch_collision_system(
         if let Ok(mut crouch) = query.get_mut(evt.player_entity) {
             if CrouchState::Airborne == crouch.state || landed_this_frame {
                 if let Ok(ent) = breakables_query.get(evt.ground_entity) {
-                    commands.entity(ent).despawn()
+                    commands.entity(ent).despawn();
                 }
                 crouch.state = CrouchState::Grounded;
                 landed_this_frame = true;

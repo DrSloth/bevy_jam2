@@ -89,12 +89,10 @@ impl MapManager {
             } else {
                 return Err(LoadMapError::SectionNotFoundError(new_section));
             }
+        } else if let Some(section_path) = self.map.sections.get(&*self.current_section.name) {
+            section_path
         } else {
-            if let Some(section_path) = self.map.sections.get(&*self.current_section.name) {
-                section_path
-            } else {
-                panic!("Map stores invalid section name");
-            }
+            panic!("Map stores invalid section name");
         };
 
         let room: RoomConfig = load_toml(section_path.join(&*load_room.room).join("room.toml"))?;
@@ -160,6 +158,7 @@ impl MapManager {
 
 #[derive(Debug)]
 pub struct Room {
+    #[allow(dead_code)] //TODO use this for the checkpoint room/going back one room
     id: Cow<'static, str>,
     entity: Entity,
 }
@@ -223,13 +222,13 @@ pub enum ConnectionSide {
 
 impl ConnectionSide {
     pub fn matches_collision(self, coll_dir: &Collision) -> bool {
-        match (self, coll_dir) {
-            (Self::Bottom, Collision::Top) => true,
-            (Self::Top, Collision::Bottom) => true,
-            (Self::Left, Collision::Right) => true,
-            (Self::Right, Collision::Left) => true,
-            _ => false,
-        }
+        matches!(
+            (self, coll_dir),
+            (Self::Bottom, Collision::Top)
+                | (Self::Top, Collision::Bottom)
+                | (Self::Left, Collision::Right)
+                | (Self::Right, Collision::Left)
+        )
     }
 
     pub fn inverse(self) -> Self {
@@ -272,8 +271,9 @@ fn load_collision_layer<P: AsRef<Path>>(
                         .insert(Collider {
                             size,
                             filter: CollisionFilter::ALL,
-                        }).id();
-                    
+                        })
+                        .id();
+
                     commands.entity(parent).push_children(&[ent]);
                 } else {
                     colliders.insert(*pixel, (x, y));
@@ -285,6 +285,8 @@ fn load_collision_layer<P: AsRef<Path>>(
     Ok(())
 }
 
+// TODO Some of the actions taken for different tiles can be factored out
+#[allow(clippy::too_many_lines)]
 fn load_layer<P: AsRef<Path>>(
     asset_cache: &mut AssetCache<EmbeddedAssets>,
     assets: &mut Assets<Image>,
@@ -403,7 +405,6 @@ fn load_layer<P: AsRef<Path>>(
                         *item,
                     ));
                 }
-
                 let tile_id = tile.id();
                 commands.entity(parent).push_children(&[tile_id]);
             }

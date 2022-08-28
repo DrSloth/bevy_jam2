@@ -2,8 +2,8 @@ pub mod abilities;
 
 use bevy::{prelude::*, sprite::collide_aabb::Collision};
 
-use crate::POST_COLLISION_STAGE;
 use crate::asset_loaders::cache::AssetCache;
+use crate::POST_COLLISION_STAGE;
 use crate::{
     asset_loaders::EmbeddedAssets,
     camera::FollowedByCamera,
@@ -13,7 +13,7 @@ use crate::{
 };
 use abilities::{collectibles, PlayerInventory};
 
-use self::abilities::{double_jump_land_system, NoneAbility, PlayerDoubleJump, PlayerCrouch, player_crouch_system, crouch_collision_system};
+use self::abilities::{crouch_collision_system, double_jump_land_system, player_crouch_system};
 
 #[derive(Debug)]
 pub struct PlayerPlugin;
@@ -71,8 +71,8 @@ fn player_setup_system(
         .insert(vel_map)
         .insert(PlayerInventory::new())
         // .insert(PlayerInventory::new_with::<PlayerCrouch, PlayerDoubleJump>())
-        .insert(PlayerCrouch::default())
-        .insert(PlayerDoubleJump::default())
+        // .insert(PlayerCrouch::default())
+        // .insert(PlayerDoubleJump::default())
         .insert(MoveableCollider {
             size: Vec2::new(PLAYER_SIZE / 1.2, PLAYER_SIZE),
             collision_offset: Vec2::new(PLAYER_SIZE / 8.5, PLAYER_SIZE / 3.0),
@@ -191,7 +191,7 @@ fn player_collision_system(
     }
 }
 
-pub struct PlayerLandEvent{
+pub struct PlayerLandEvent {
     player_entity: Entity,
     ground_entity: Entity,
 }

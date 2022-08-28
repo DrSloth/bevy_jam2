@@ -319,7 +319,7 @@ pub fn collision_system(
                 static_entity: collision.static_entity,
                 collision: collision.coll_dir,
                 moving_entity,
-            })
+            });
         }
     }
 }

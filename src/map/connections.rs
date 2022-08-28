@@ -30,14 +30,15 @@ pub fn connection_collision_system(
                 if let Some(room) = map.room_stack.pop() {
                     commands.entity(room.entity).despawn_recursive();
                 }
-                let spawn_point = map.load_room(
-                    &mut asset_cache,
-                    &mut assets,
-                    &mut commands,
-                    connection.0.clone(), // TODO this clone could be eliminated with more 'static
-                    Some(connection.1.inverse()),
-                )
-                .unwrap_or_else(|e| panic!("Error loading room: {}", e));
+                let spawn_point = map
+                    .load_room(
+                        &mut asset_cache,
+                        &mut assets,
+                        &mut commands,
+                        connection.0.clone(), // TODO this clone could be eliminated with more 'static
+                        Some(connection.1.inverse()),
+                    )
+                    .unwrap_or_else(|e| panic!("Error loading room: {}", e));
                 if let Some(spawn_point) = spawn_point {
                     player_trans.translation = spawn_point.spawn_point;
                 }
