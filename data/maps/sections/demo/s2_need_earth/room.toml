@@ -2,3 +2,7 @@ layers = ["borders.png", "bricks.png", "connections.png", "collisions.png"]
 variations = [["enemies.png"]]
 collisions = {"collisions.png" = true}
 uncleared = 0
+
+[connections]
+"#000010" = {room = "s2_need_fire_water"}
+"#000020" = {room = "hub"}

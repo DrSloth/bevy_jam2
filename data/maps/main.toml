@@ -144,9 +144,13 @@ sprite = "sprites/world/tileset/water_platform.png"
 freezeable = true
 
 [sprites.connection_up]
+connection = "top"
 
 [sprites.connection_right]
+connection = "right"
+
 [sprites.connection_down]
 connection = "bottom"
 
 [sprites.connection_left]
+connection = "left"

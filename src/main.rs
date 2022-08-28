@@ -21,7 +21,7 @@ use bevy_framepace::{FramepacePlugin, FramepaceSettings, Limiter};
 use asset_loaders::{cache::AssetCache, EmbeddedAssets};
 use camera::FollowEntity;
 use collision::CollisionEvent;
-use map::{connections, CurrentRoom, Map};
+use map::{connections, Map, MapManager, LoadRoomConfig};
 use physics::{PhysicsPlugin, VEL_MOVE_STAGE};
 use player::{MouseCursor, PlayerPlugin};
 
@@ -58,8 +58,7 @@ fn main() {
         .add_system(connections::connection_collision_system)
         .add_event::<CollisionEvent>()
         .insert_resource(AssetCache::<EmbeddedAssets>::new())
-        .insert_resource(map::load_map("maps/main.toml"))
-        .insert_resource(CurrentRoom::new())
+        .insert_resource(MapManager::load_map("maps/main.toml", "demo".into()))
         .run();
 }
 
@@ -92,26 +91,22 @@ pub fn setup_system(mut commands: Commands, mut framepace: ResMut<FramepaceSetti
 
 fn initial_room_setup(
     mut commands: Commands,
-    map: Res<Map>,
     mut asset_cache: ResMut<AssetCache<EmbeddedAssets>>,
     mut assets: ResMut<Assets<Image>>,
-    mut current_room: ResMut<CurrentRoom>,
+    mut map_manager: ResMut<MapManager>
 ) {
-    match map::load_room(
+    if let Err(e) = map_manager.load_room(
         &mut asset_cache,
         &mut assets,
         &mut commands,
-        &map,
-        "demo",
-        "tt_get_earth",
-        Some(0),
+        LoadRoomConfig {
+            section: None,
+            room: "tt_get_earth".into(),
+            variation: Some(0),
+        },
+        None
     ) {
-        Ok(room) => {
-            *current_room = room;
-        }
-        Err(e) => {
             panic!("Could not load initial room: {}", e);
-        }
     }
 }
 

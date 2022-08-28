@@ -1,0 +1,4 @@
+[connections]
+"#000000" = {room = "s3_second_combine"}
+"#000030" = {room = "s5_need_earth_ice"}
+"#000010" = {room = "s5_need_steam_ice"}

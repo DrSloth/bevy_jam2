@@ -69,8 +69,8 @@ fn player_setup_system(
         .insert(PlayerMovement::new_in(&mut vel_map))
         .insert(Gravity::new_in(&mut vel_map))
         .insert(vel_map)
-        // .insert(PlayerInventory::new())
-        .insert(PlayerInventory::new_with::<PlayerCrouch, PlayerDoubleJump>())
+        .insert(PlayerInventory::new())
+        // .insert(PlayerInventory::new_with::<PlayerCrouch, PlayerDoubleJump>())
         .insert(PlayerCrouch::default())
         .insert(PlayerDoubleJump::default())
         .insert(MoveableCollider {
