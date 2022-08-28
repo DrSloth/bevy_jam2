@@ -2,6 +2,7 @@ pub mod abilities;
 
 use bevy::{prelude::*, sprite::collide_aabb::Collision};
 
+use crate::POST_COLLISION_STAGE;
 use crate::asset_loaders::cache::AssetCache;
 use crate::{
     asset_loaders::EmbeddedAssets,
@@ -11,6 +12,8 @@ use crate::{
     LATE_UPDATE_STAGE, PLAYER_SIZE,
 };
 use abilities::{collectibles, PlayerInventory};
+
+use self::abilities::{double_jump_land_system, NoneAbility, PlayerDoubleJump, PlayerCrouch, player_crouch_system, crouch_collision_system};
 
 #[derive(Debug)]
 pub struct PlayerPlugin;
@@ -23,11 +26,16 @@ impl Plugin for PlayerPlugin {
             .add_system(player_collision_system)
             .add_system(abilities::player_shoot_system)
             .add_system(collectibles::collect_ability_system)
-            .add_system(abilities::player_shot_destroy_walls_system)
+            .add_system(abilities::player_shot_collision_system)
             .add_system_to_stage(CoreStage::PreUpdate, move_cursor_system)
             .add_system_to_stage(LATE_UPDATE_STAGE, abilities::player_dash_system)
+            .add_system_to_stage(LATE_UPDATE_STAGE, abilities::player_double_jump_system)
+            .add_system_to_stage(POST_COLLISION_STAGE, double_jump_land_system)
+            .add_system_to_stage(LATE_UPDATE_STAGE, player_crouch_system)
+            .add_system_to_stage(POST_COLLISION_STAGE, crouch_collision_system)
             .add_system_to_stage(LATE_UPDATE_STAGE, player_fall_system)
             .add_system_to_stage(VEL_SYSTEM_STAGE, add_player_velocity_system)
+            .add_event::<PlayerLandEvent>()
             .add_event::<JumpEvent>();
     }
 }
@@ -61,7 +69,10 @@ fn player_setup_system(
         .insert(PlayerMovement::new_in(&mut vel_map))
         .insert(Gravity::new_in(&mut vel_map))
         .insert(vel_map)
-        .insert(PlayerInventory::new())
+        // .insert(PlayerInventory::new())
+        .insert(PlayerInventory::new_with::<PlayerCrouch, PlayerDoubleJump>())
+        .insert(PlayerCrouch::default())
+        .insert(PlayerDoubleJump::default())
         .insert(MoveableCollider {
             size: Vec2::new(PLAYER_SIZE / 1.2, PLAYER_SIZE),
             collision_offset: Vec2::new(PLAYER_SIZE / 8.5, PLAYER_SIZE / 3.0),
@@ -130,14 +141,14 @@ pub fn player_input_system(
 }
 
 pub fn player_jump_system(
-    mut player_query: Query<(&VelocityMap, &mut PlayerMovement, &Gravity)>,
+    mut player_query: Query<(&mut PlayerMovement, &Gravity)>,
     mut jump_event_reader: EventReader<JumpEvent>,
 ) {
-    const JUMP_POWER: f32 = 8.5;
+    const JUMP_POWER: f32 = 7.5;
 
     for JumpEvent(entity) in jump_event_reader.iter() {
-        if let Ok((vel_map, mut player_movement, grav)) = player_query.get_mut(*entity) {
-            let falling = grav_is_falling(grav, vel_map);
+        if let Ok((mut player_movement, grav)) = player_query.get_mut(*entity) {
+            let falling = is_falling(grav.velocity.y);
             let can_jump = !falling && player_movement.can_jump;
 
             if can_jump {
@@ -148,13 +159,20 @@ pub fn player_jump_system(
     }
 }
 
-pub fn player_collision_system(
+fn player_collision_system(
     mut collision_event_reader: EventReader<CollisionEvent>,
-    mut player_query: Query<(&mut PlayerMovement, &Gravity, &VelocityMap)>,
+    mut event_writer: EventWriter<PlayerLandEvent>,
+    mut player_query: Query<(&mut PlayerMovement, &Gravity, &VelocityMap, Entity)>,
 ) {
     for collision in collision_event_reader.iter() {
         if let Collision::Top = collision.collision {
-            if let Ok((mut player, grav, vel_map)) = player_query.get_mut(collision.moving_entity) {
+            if let Ok((mut player, grav, vel_map, player_entity)) =
+                player_query.get_mut(collision.moving_entity)
+            {
+                event_writer.send(PlayerLandEvent {
+                    player_entity,
+                    ground_entity: collision.static_entity,
+                });
                 let player_y_speed = player.velocity.y.abs();
 
                 if let Some(grav_vel) = vel_map.get(grav.vel_id) {
@@ -164,7 +182,8 @@ pub fn player_collision_system(
                 }
             }
         } else if let Collision::Bottom = collision.collision {
-            if let Ok((mut player, _grav, _vel_map)) = player_query.get_mut(collision.moving_entity)
+            if let Ok((mut player, _grav, _vel_map, _ent)) =
+                player_query.get_mut(collision.moving_entity)
             {
                 player.velocity.y = 0.0;
             }
@@ -172,14 +191,13 @@ pub fn player_collision_system(
     }
 }
 
-fn is_falling(grav_y_vel: f32) -> bool {
-    grav_y_vel < -(GRAVITY * 3.0)
+pub struct PlayerLandEvent{
+    player_entity: Entity,
+    ground_entity: Entity,
 }
 
-fn grav_is_falling(grav: &Gravity, vel_map: &VelocityMap) -> bool {
-    vel_map
-        .get(grav.vel_id)
-        .map_or(true, |vel| is_falling(vel.y))
+fn is_falling(grav_y_vel: f32) -> bool {
+    grav_y_vel < -(GRAVITY * 3.0)
 }
 
 /// Makes the player slow down while falling

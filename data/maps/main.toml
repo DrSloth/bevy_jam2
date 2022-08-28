@@ -75,53 +75,6 @@ zrot = 180
 sprite = "sprites/world/tileset/border_inner_corner.png"
 zrot = 270
 
-[sprites.threeway_corner_z0]
-sprite = "sprites/world/tileset/border_threeway_corner.png"
-zrot = 0
-
-[sprites.threeway_corner_z90]
-sprite = "sprites/world/tileset/border_threeway_corner.png"
-zrot = 90
-
-[sprites.threeway_corner_z180]
-sprite = "sprites/world/tileset/border_threeway_corner.png"
-zrot = 180
-
-[sprites.threeway_corner_z270]
-sprite = "sprites/world/tileset/border_threeway_corner.png"
-zrot = 270
-
-[sprites.border_edge_inner_corner_z0]
-sprite = "sprites/world/tileset/border_edge_inner_corner.png"
-zrot = 0
-
-[sprites.border_edge_inner_corner_z90]
-sprite = "sprites/world/tileset/border_edge_inner_corner.png"
-zrot = 90
-
-[sprites.border_edge_inner_corner_z180]
-sprite = "sprites/world/tileset/border_edge_inner_corner.png"
-zrot = 180
-
-[sprites.border_edge_inner_corner_z270]
-sprite = "sprites/world/tileset/border_edge_inner_corner.png"
-zrot = 270
-
-[sprites.border_edge_inner_corner_mirrored_z0]
-sprite = "sprites/world/tileset/border_edge_inner_corner_mirrored.png"
-zrot = 0
-
-[sprites.border_edge_inner_corner_mirrored_z90]
-sprite = "sprites/world/tileset/border_edge_inner_corner_mirrored.png"
-zrot = 90
-
-[sprites.border_edge_inner_corner_mirrored_z180]
-sprite = "sprites/world/tileset/border_edge_inner_corner_mirrored.png"
-zrot = 180
-
-[sprites.border_edge_inner_corner_mirrored_z270]
-sprite = "sprites/world/tileset/border_edge_inner_corner_mirrored.png"
-zrot = 270
 
 [sprites.checkpoint0]
 sprite = "sprites/world/checkpoint/checkpoint0.png"
@@ -191,14 +144,9 @@ sprite = "sprites/world/tileset/water_platform.png"
 freezeable = true
 
 [sprites.connection_up]
-connection = true
 
 [sprites.connection_right]
-connection = true
-
 [sprites.connection_down]
-connection = true
+connection = "bottom"
 
 [sprites.connection_left]
-connection = true
-

@@ -9,6 +9,7 @@ mod asset_loaders;
 mod camera;
 mod collision;
 mod combat;
+mod map;
 mod physics;
 mod player;
 mod util;
@@ -17,10 +18,10 @@ use bevy::prelude::*;
 
 use bevy_framepace::{FramepacePlugin, FramepaceSettings, Limiter};
 
-use asset_loaders::{cache::AssetCache, maps, EmbeddedAssets};
+use asset_loaders::{cache::AssetCache, EmbeddedAssets};
 use camera::FollowEntity;
 use collision::CollisionEvent;
-use maps::Map;
+use map::{connections, CurrentRoom, Map};
 use physics::{PhysicsPlugin, VEL_MOVE_STAGE};
 use player::{MouseCursor, PlayerPlugin};
 
@@ -32,6 +33,7 @@ pub const CAMERA_MOVE_STAGE: &str = "cam_mov";
 pub const LATE_UPDATE_STAGE: &str = "late_upd";
 
 const COLLISION_STAGE: &str = "coll_stage";
+const POST_COLLISION_STAGE: &str = "post_coll_stage";
 
 fn main() {
     App::new()
@@ -45,6 +47,7 @@ fn main() {
         .add_plugin(PhysicsPlugin)
         .add_stage_after(VEL_MOVE_STAGE, CAMERA_MOVE_STAGE, SystemStage::parallel())
         .add_stage_after(VEL_MOVE_STAGE, COLLISION_STAGE, SystemStage::parallel())
+        .add_stage_after(COLLISION_STAGE, POST_COLLISION_STAGE, SystemStage::parallel())
         .add_plugin(PlayerPlugin)
         .add_startup_system(setup_system)
         .add_startup_system(initial_room_setup)
@@ -52,9 +55,11 @@ fn main() {
         .add_system(combat::move_projectile_system)
         .add_system_to_stage(CAMERA_MOVE_STAGE, camera::camera_follow_system)
         .add_system_to_stage(COLLISION_STAGE, collision::collision_system)
+        .add_system(connections::connection_collision_system)
         .add_event::<CollisionEvent>()
         .insert_resource(AssetCache::<EmbeddedAssets>::new())
-        .insert_resource(maps::load_map("maps/main.toml"))
+        .insert_resource(map::load_map("maps/main.toml"))
+        .insert_resource(CurrentRoom::new())
         .run();
 }
 
@@ -90,8 +95,9 @@ fn initial_room_setup(
     map: Res<Map>,
     mut asset_cache: ResMut<AssetCache<EmbeddedAssets>>,
     mut assets: ResMut<Assets<Image>>,
+    mut current_room: ResMut<CurrentRoom>,
 ) {
-    if let Err(e) = maps::load_room(
+    match map::load_room(
         &mut asset_cache,
         &mut assets,
         &mut commands,
@@ -100,7 +106,12 @@ fn initial_room_setup(
         "tt_get_earth",
         Some(0),
     ) {
-        panic!("Could not load initial room: {}", e);
+        Ok(room) => {
+            *current_room = room;
+        }
+        Err(e) => {
+            panic!("Could not load initial room: {}", e);
+        }
     }
 }
 

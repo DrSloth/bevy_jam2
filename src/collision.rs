@@ -1,6 +1,9 @@
 //! Simple implementation of collisions
 
-use std::ops::{BitAnd, BitOr, Not};
+use std::{
+    cmp::Ordering,
+    ops::{BitAnd, BitOr, Not},
+};
 
 use bevy::{prelude::*, sprite::collide_aabb::Collision};
 use serde::{Deserialize, Serialize};
@@ -129,6 +132,8 @@ pub fn collision_system(
         let mut next_pos = end_pos;
         // Distance from edges of the moving collider to center
         let moving_coll_offset = moving_collider.size / 2.0;
+        let mut vertical_collisions: Vec<CollisionWith> = vec![];
+        let mut horizontal_collisions: Vec<CollisionWith> = vec![];
 
         for (collider_trans, collider, static_entity) in collider_query.iter() {
             // rect points
@@ -148,14 +153,14 @@ pub fn collision_system(
                 && top_left.x >= start_pos.x
                 && top_left.x <= end_pos.x + moving_coll_offset.x
             {
-                let collision_right = line_intersection(
+                let collision_left = line_intersection(
                     start_pos,
                     Vec2::new(end_pos.x + moving_coll_offset.x, end_pos.y),
                     top_left,
                     bottom_left,
                 );
 
-                if let Some(intersection) = collision_right {
+                if let Some(intersection) = collision_left {
                     if intersection.y >= bottom_right.y - collision_offset.y
                         && intersection.y <= top_right.y + collision_offset.y
                         && ((intersection.y >= start_pos.y
@@ -163,24 +168,30 @@ pub fn collision_system(
                             || (intersection.y <= start_pos.y
                                 && intersection.y >= end_pos.y - collision_offset.y))
                     {
-                        wcollision_events.send(CollisionEvent::new(
-                            Collision::Left,
-                            moving_entity,
+                        let new_x = intersection.x - moving_coll_offset.x;
+                        let ord = new_x.total_cmp(&next_pos.x);
+                        let collision_with = CollisionWith {
                             static_entity,
-                        ));
-                        let p = Vec2::new(
-                            intersection.x - moving_coll_offset.x,
-                            moving_trans.translation.y,
-                        );
-                        if (p.x - start_pos.x).abs() < (next_pos.x - start_pos.x).abs() {
-                            next_pos.x = p.x;
+                            coll_dir: Collision::Left,
+                        };
+
+                        match ord {
+                            Ordering::Less => {
+                                horizontal_collisions.clear();
+                                next_pos.x = new_x;
+                                horizontal_collisions.push(collision_with);
+                            }
+                            Ordering::Equal => {
+                                horizontal_collisions.push(collision_with);
+                            }
+                            Ordering::Greater => (),
                         }
                     }
                 }
             }
 
             if collider.filter.collides_top()
-                && coll_center.y < start_pos.y
+                && top_left.y < start_pos.y
                 && top_left.y <= start_pos.y
                 && top_left.y >= end_pos.y - moving_coll_offset.y
             {
@@ -199,24 +210,30 @@ pub fn collision_system(
                             || (intersection.x <= start_pos.x
                                 && intersection.x >= end_pos.x - collision_offset.x))
                     {
-                        wcollision_events.send(CollisionEvent::new(
-                            Collision::Top,
-                            moving_entity,
+                        let new_y = intersection.y + moving_coll_offset.y;
+                        let ord = next_pos.y.total_cmp(&new_y);
+                        let collision_with = CollisionWith {
                             static_entity,
-                        ));
-                        let p = Vec2::new(
-                            moving_trans.translation.x,
-                            intersection.y + moving_coll_offset.y,
-                        );
-                        if (p.y - start_pos.y).abs() < (next_pos.y - start_pos.y).abs() {
-                            next_pos.y = p.y;
+                            coll_dir: Collision::Top,
+                        };
+
+                        match ord {
+                            Ordering::Less => {
+                                vertical_collisions.clear();
+                                next_pos.y = new_y;
+                                vertical_collisions.push(collision_with);
+                            }
+                            Ordering::Equal => {
+                                vertical_collisions.push(collision_with);
+                            }
+                            Ordering::Greater => (),
                         }
                     }
                 }
             }
 
             if collider.filter.collides_right() {
-                if let Some(coll_right) = check_collide_right(
+                if let Some(new_x) = check_collide_right(
                     coll_center,
                     start_pos,
                     end_pos,
@@ -225,14 +242,22 @@ pub fn collision_system(
                     top_right,
                     collision_offset,
                 ) {
-                    wcollision_events.send(CollisionEvent::new(
-                        Collision::Right,
-                        moving_entity,
+                    let ord = next_pos.x.total_cmp(&new_x);
+                    let collision_with = CollisionWith {
                         static_entity,
-                    ));
+                        coll_dir: Collision::Right,
+                    };
 
-                    if (coll_right - start_pos.x).abs() < (next_pos.x - start_pos.x).abs() {
-                        next_pos.x = coll_right;
+                    match ord {
+                        Ordering::Less => {
+                            horizontal_collisions.clear();
+                            next_pos.x = new_x;
+                            horizontal_collisions.push(collision_with);
+                        }
+                        Ordering::Equal => {
+                            horizontal_collisions.push(collision_with);
+                        }
+                        Ordering::Greater => (),
                     }
                 }
             }
@@ -262,19 +287,47 @@ pub fn collision_system(
                             moving_entity,
                             static_entity,
                         ));
-                        let p = Vec2::new(
-                            moving_trans.translation.x,
-                            intersection.y - moving_coll_offset.y,
-                        );
-                        if (p.y - start_pos.y).abs() < (next_pos.y - start_pos.y).abs() {
-                            next_pos.y = p.y;
+                        let new_y = intersection.y + moving_coll_offset.y;
+                        let ord = new_y.total_cmp(&next_pos.y);
+                        let collision_with = CollisionWith {
+                            static_entity,
+                            coll_dir: Collision::Bottom,
+                        };
+
+                        match ord {
+                            Ordering::Less => {
+                                vertical_collisions.clear();
+                                next_pos.y = new_y;
+                                vertical_collisions.push(collision_with);
+                            }
+                            Ordering::Equal => {
+                                vertical_collisions.push(collision_with);
+                            }
+                            Ordering::Greater => (),
                         }
                     }
                 }
             }
         }
         moving_trans.translation = next_pos.extend(0.0);
+
+        for collision in vertical_collisions
+            .into_iter()
+            .chain(horizontal_collisions.into_iter())
+        {
+            wcollision_events.send(CollisionEvent {
+                static_entity: collision.static_entity,
+                collision: collision.coll_dir,
+                moving_entity,
+            })
+        }
     }
+}
+
+#[derive(Debug)]
+struct CollisionWith {
+    static_entity: Entity,
+    coll_dir: Collision,
 }
 
 fn line_intersection(

@@ -1,5 +1,4 @@
 pub mod cache;
-pub mod maps;
 
 use bevy::{
     asset::{Assets, Handle},

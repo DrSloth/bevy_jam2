@@ -1,9 +1,9 @@
-//! Implementation of abilities.
+//! Implemen
 //!
 //! ## Terms
 //! - Skill => The actual usable skill like dashing/double jump etc.
 //! - Ability => An ability like Fire/Earth
-//!     - The complete system of collecting items, using skills
+//!     - The complete system of collecting iteGravity using skills
 //! - Item => The collectible item which is stored in the invetory as ability
 
 mod skills;
@@ -35,8 +35,10 @@ use crate::{
 // NOTE this would be nice if it was const (phf_map)
 pub static ABILITY_MAP: Lazy<HashMap<AbilityItem, AbilityDescriptor>> = Lazy::new(|| {
     let mut map = HashMap::new();
-    map.insert(AbilityItem::Fire, PlayerDash::descriptor());
-    map.insert(AbilityItem::Earth, PlayerShoot::descriptor());
+    map.insert(AbilityItem::Fire, PlayerDash::ability_descriptor());
+    map.insert(AbilityItem::Earth, PlayerShoot::ability_descriptor());
+    map.insert(AbilityItem::Steam, PlayerDoubleJump::ability_descriptor());
+    map.insert(AbilityItem::Stone, PlayerCrouch::ability_descriptor());
 
     map
 });
@@ -47,6 +49,8 @@ pub enum AbilityItem {
     Fire,
     Earth,
     Water,
+    Steam,
+    Stone,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -67,7 +71,7 @@ pub trait Ability: Component + Default + Sized + 'static {
         inventory.equip(Self::ability_id(), equip_slot);
     }
 
-    fn descriptor() -> AbilityDescriptor {
+    fn ability_descriptor() -> AbilityDescriptor {
         AbilityDescriptor {
             id: Self::ability_id(),
             unequip: Self::unequip,
@@ -128,6 +132,7 @@ impl PlayerInventory {
     //     id == self.0 || id == self.1
     // }
 
+    #[allow(dead_code)] // Used when testing
     pub fn new() -> Self {
         Self::new_with::<NoneAbility, NoneAbility>()
     }
@@ -164,6 +169,18 @@ impl PlayerInventory {
         }
     }
 
+    pub fn get_equipped_at<T: Ability>(&self) -> Option<EquipSlot> {
+        let id = T::ability_id();
+
+        if self.0 == id {
+            Some(EquipSlot::Left)
+        } else if self.1 == id {
+            Some(EquipSlot::Right)
+        } else {
+            None
+        }
+    }
+
     pub fn first_free_slot(&self) -> Option<EquipSlot> {
         if self.0 == NoneAbility::ability_id() {
             Some(EquipSlot::Left)
@@ -175,6 +192,7 @@ impl PlayerInventory {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
 pub enum EquipSlot {
     Left,
     Right,
@@ -186,6 +204,13 @@ impl EquipSlot {
             MouseButton::Left => Some(EquipSlot::Left),
             MouseButton::Right => Some(EquipSlot::Right),
             _ => None,
+        }
+    }
+
+    pub fn to_mouse_btn(self) -> MouseButton {
+        match self {
+            Self::Left => MouseButton::Left,
+            Self::Right => MouseButton::Right,
         }
     }
 }
@@ -251,7 +276,7 @@ pub fn player_shoot_system(
                         ..Default::default()
                     })
                     .insert(VelocityMap::new())
-                    .insert(PlayerShotProjectile { size })
+                    .insert(PlayerShotProjectile::new(size))
                     .insert(projectile);
             }
         }
@@ -262,16 +287,26 @@ pub fn player_shoot_system(
 #[derive(Debug, Component)]
 pub struct PlayerShotProjectile {
     pub size: Vec2,
+    creation_time: Instant,
+}
+
+impl PlayerShotProjectile {
+    fn new(size: Vec2) -> Self {
+        Self {
+            size,
+            creation_time: Instant::now(),
+        }
+    }
 }
 
 /// System that destroys breakable colliders with player projectiles
-pub fn player_shot_destroy_walls_system(
+pub fn player_shot_collision_system(
     mut commands: Commands,
     shot_query: Query<(&Transform, &PlayerShotProjectile, Entity)>,
-    breakable_wall_query: Query<(&Transform, &Collider, Entity), With<BreakableCollider>>,
+    breakable_wall_query: Query<(&Transform, &Collider, Option<&BreakableCollider>, Entity)>,
 ) {
-    for (shot_trans, shot, shot_entity) in shot_query.iter() {
-        for (wall_trans, wall_coll, wall_entity) in breakable_wall_query.iter() {
+    'outer: for (shot_trans, shot, shot_entity) in shot_query.iter() {
+        for (wall_trans, wall_coll, breakable, wall_entity) in breakable_wall_query.iter() {
             if collide_aabb::collide(
                 shot_trans.translation,
                 shot.size,
@@ -281,8 +316,15 @@ pub fn player_shot_destroy_walls_system(
             .is_some()
             {
                 commands.entity(shot_entity).despawn();
-                commands.entity(wall_entity).despawn();
+                if breakable.is_some() {
+                    commands.entity(wall_entity).despawn();
+                }
+                continue 'outer;
             }
+        }
+
+        if shot.creation_time.elapsed() > Duration::from_secs(30) {
+            commands.entity(shot_entity).despawn();
         }
     }
 }
