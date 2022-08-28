@@ -1,2 +1,6 @@
 layers = ["borders.png", "bricks.png", "connections.png", "collisions.png"]
 collisions = {"collisions.png" = true}
+
+[connections]
+"#000000" = {room = "s2_need_stone_water"}
+"#000030" = {room = "s2_need_earth"}
