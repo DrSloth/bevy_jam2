@@ -15,23 +15,43 @@ pub struct CollisionEvent {
     pub collision: Collision,
     pub moving_entity: Entity,
     pub static_entity: Entity,
+    pub move_on: MoveOn,
 }
 
-impl CollisionEvent {
-    pub fn new(collision: Collision, moving_entity: Entity, static_entity: Entity) -> Self {
-        Self {
-            collision,
-            moving_entity,
-            static_entity,
-        }
-    }
+// impl CollisionEvent {
+//     pub fn new(
+//         collision: Collision,
+//         moving_entity: Entity,
+//         static_entity: Entity,
+//         move_on: MoveOn,
+//     ) -> Self {
+//         Self {
+//             collision,
+//             moving_entity,
+//             static_entity,
+//             move_on,
+//         }
+//     }
+// }
+
+#[derive(Debug)]
+pub enum MoveOn {
+    X(f32),
+    Y(f32),
+    None,
 }
 
 /// A static non moving collider
 #[derive(Component, Debug)]
 pub struct Collider {
+    /// The actual size of the collider
     pub size: Vec2,
     pub filter: CollisionFilter,
+    /// The offset used for collision "delay",
+    ///
+    /// If for instance collision from top is measured, the finite line used for intersection
+    /// is extended by `collision_offset.x` to the left AND the right
+    pub collision_offset: Vec2,
 }
 
 impl Default for Collider {
@@ -39,21 +59,14 @@ impl Default for Collider {
         Self {
             size: Vec2::ZERO,
             filter: CollisionFilter::ALL,
+            collision_offset: Vec2::ZERO,
         }
     }
 }
 
 /// A movable collider which should not pass through
 #[derive(Component, Debug)]
-pub struct MoveableCollider {
-    /// The actual size of the collider
-    pub size: Vec2,
-    /// The offset used for collision "delay",
-    ///
-    /// If for instance collision from top is measured, the finite line used for intersection
-    /// is extended by `collision_offset.x` to the left AND the right
-    pub collision_offset: Vec2,
-}
+pub struct MoveableCollider;
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 #[serde(transparent)]
@@ -64,30 +77,45 @@ impl CollisionFilter {
     pub const RIGHT: Self = Self(0b0100);
     pub const BOTTOM: Self = Self(0b0010);
     pub const LEFT: Self = Self(0b0001);
-    pub const ALL: Self = Self(0xF);
+    pub const BULLETS: Self = Self(0b10000);
+    pub const ALL: Self = Self(0b11111);
 
     // pub fn with(self, other: Self) -> Self {
     //     self | other
     // }
 
-    pub fn collides_at(self, other: CollisionFilter) -> bool {
+    pub fn collides_with(self, other: CollisionFilter) -> bool {
         (self & other).0 == other.0
     }
 
     pub fn collides_top(self) -> bool {
-        self.collides_at(Self::TOP)
+        self.collides_with(Self::TOP)
     }
 
     pub fn collides_right(self) -> bool {
-        self.collides_at(Self::RIGHT)
+        self.collides_with(Self::RIGHT)
     }
 
     pub fn collides_bottom(self) -> bool {
-        self.collides_at(Self::BOTTOM)
+        self.collides_with(Self::BOTTOM)
     }
 
     pub fn collides_left(self) -> bool {
-        self.collides_at(Self::LEFT)
+        self.collides_with(Self::LEFT)
+    }
+
+    pub fn collides_with_bullets(self) -> bool {
+        self.collides_with(Self::BULLETS)
+    }
+
+    pub fn is_collision(self, col: &Collision) -> bool {
+        match col {
+            Collision::Left => self.collides_left(),
+            Collision::Right => self.collides_right(),
+            Collision::Top => self.collides_top(),
+            Collision::Bottom => self.collides_bottom(),
+            Collision::Inside => true,
+        }
     }
 
     // pub fn collides_all(self) -> bool {
@@ -119,13 +147,12 @@ impl Not for CollisionFilter {
 #[allow(clippy::too_many_lines)] // NOTE may be changed later
 pub fn collision_system(
     // mut meshes: ResMut<Assets<Mesh>>,
-    mut moving_query: Query<(&mut Transform, &VelocityMap, &MoveableCollider, Entity)>,
-    collider_query: Query<(&Transform, &Collider, Entity), Without<MoveableCollider>>,
+    moving_query: Query<(&Transform, &Collider, &VelocityMap, Entity), With<MoveableCollider>>,
+    collider_query: Query<(&Transform, &Collider, Entity)>,
     mut wcollision_events: EventWriter<CollisionEvent>,
 ) {
     // Check line intersection
-    for (mut moving_trans, velocity_map, moving_collider, moving_entity) in moving_query.iter_mut()
-    {
+    for (moving_trans, moving_collider, velocity_map, moving_entity) in moving_query.iter() {
         // player_move points
         let start_pos = moving_trans.translation.truncate() - velocity_map.last_velocity();
         let end_pos = moving_trans.translation.truncate();
@@ -136,6 +163,10 @@ pub fn collision_system(
         let mut horizontal_collisions: Vec<CollisionWith> = vec![];
 
         for (collider_trans, collider, static_entity) in collider_query.iter() {
+            if moving_entity == static_entity {
+                continue;
+            }
+
             // rect points
             // rect center
             let coll_center = collider_trans.translation.truncate();
@@ -263,7 +294,6 @@ pub fn collision_system(
             }
 
             if collider.filter.collides_bottom()
-                && coll_center.y > start_pos.y
                 && bottom_left.y >= start_pos.y
                 && bottom_left.y <= end_pos.y + moving_coll_offset.y
             {
@@ -282,12 +312,12 @@ pub fn collision_system(
                             || (intersection.x <= start_pos.x
                                 && intersection.x >= end_pos.x - collision_offset.x))
                     {
-                        wcollision_events.send(CollisionEvent::new(
-                            Collision::Bottom,
-                            moving_entity,
-                            static_entity,
-                        ));
-                        let new_y = intersection.y + moving_coll_offset.y;
+                        // wcollision_events.send(CollisionEvent::new(
+                        //     Collision::Bottom,
+                        //     moving_entity,
+                        //     static_entity,
+                        // ));
+                        let new_y = intersection.y - moving_coll_offset.y;
                         let ord = new_y.total_cmp(&next_pos.y);
                         let collision_with = CollisionWith {
                             static_entity,
@@ -309,16 +339,22 @@ pub fn collision_system(
                 }
             }
         }
-        moving_trans.translation = next_pos.extend(0.0);
+        // let = next_pos.extend(0.0);
 
         for collision in vertical_collisions
             .into_iter()
             .chain(horizontal_collisions.into_iter())
         {
+            let move_on = match &collision.coll_dir {
+                Collision::Left | Collision::Right => MoveOn::X(next_pos.x),
+                Collision::Bottom | Collision::Top => MoveOn::Y(next_pos.y),
+                Collision::Inside => MoveOn::None,
+            };
             wcollision_events.send(CollisionEvent {
                 static_entity: collision.static_entity,
                 collision: collision.coll_dir,
                 moving_entity,
+                move_on,
             });
         }
     }
@@ -328,6 +364,21 @@ pub fn collision_system(
 struct CollisionWith {
     static_entity: Entity,
     coll_dir: Collision,
+}
+
+pub fn collision_move_system(
+    mut query: Query<&mut Transform>,
+    mut collision_events: EventReader<CollisionEvent>,
+) {
+    for event in collision_events.iter() {
+        if let Ok(mut trans) = query.get_mut(event.moving_entity) {
+            match event.move_on {
+                MoveOn::X(x) => trans.translation.x = x,
+                MoveOn::Y(y) => trans.translation.y = y,
+                MoveOn::None => (),
+            }
+        }
+    }
 }
 
 fn line_intersection(

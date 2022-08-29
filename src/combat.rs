@@ -27,3 +27,7 @@ pub fn move_projectile_system(mut projectiles: Query<(&mut VelocityMap, &mut Pro
         *vel = projectile.direction * projectile.speed;
     }
 }
+
+// pub struct EnemyHurtBox {
+//     size: Vec2
+// }
