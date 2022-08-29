@@ -20,7 +20,6 @@ use bevy::{
     utils::{HashMap, Instant},
 };
 use std::{
-    any::TypeId,
     fmt::{self, Debug, Formatter},
     time::Duration,
 };
@@ -34,48 +33,83 @@ use crate::{
 };
 
 // NOTE this would be nice if it was const (phf_map)
-pub static ABILITY_MAP: Lazy<HashMap<AbilityItem, AbilityDescriptor>> = Lazy::new(|| {
+pub static ABILITY_MAP: Lazy<HashMap<AbilityId, AbilityDescriptor>> = Lazy::new(|| {
     let mut map = HashMap::new();
-    map.insert(AbilityItem::Fire, PlayerDash::ability_descriptor());
-    map.insert(AbilityItem::Earth, PlayerShoot::ability_descriptor());
-    map.insert(AbilityItem::Water, PlayerWallJump::ability_descriptor());
-    map.insert(AbilityItem::Steam, PlayerDoubleJump::ability_descriptor());
-    map.insert(AbilityItem::Stone, PlayerCrouch::ability_descriptor());
+    map.insert(AbilityId::Fire, PlayerDash::ability_descriptor());
+    map.insert(AbilityId::Earth, PlayerShoot::ability_descriptor());
+    map.insert(AbilityId::Water, PlayerWallJump::ability_descriptor());
+    map.insert(AbilityId::Steam, PlayerDoubleJump::ability_descriptor());
+    map.insert(AbilityId::Stone, PlayerCrouch::ability_descriptor());
+    // map.insert(AbilityId::Reset, ResetAbilities::ability_descriptor());
 
     map
 });
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Eq, Hash, Clone, Copy)]
 #[serde(rename_all = "snake_case")]
-pub enum AbilityItem {
+pub enum AbilityId {
     Fire,
     Earth,
     Water,
     Steam,
     Stone,
+    /// Special "no ability" variant
+    None,
+    // Reset,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct AbilityId(TypeId);
+impl AbilityId {
+    pub fn combine(self, other: Self) -> Self {
+        match (self, other) {
+            (Self::Fire, Self::Earth) | (Self::Earth, Self::Fire) => Self::Stone,
+            (Self::Water, Self::Stone) | (Self::Stone, Self::Water) => {
+                // Self
+                todo!("Ice")
+            }
+            (Self::Fire, Self::Water) | (Self::Water, Self::Fire) => Self::Steam,
+            _ => Self::None,
+        }
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Fire => "fire",
+            Self::Earth => "earth",
+            Self::Water => "water",
+            Self::Steam => "steam",
+            Self::Stone => "stone",
+            Self::None => "none",
+            // Self::Reset => "reset"
+        }
+    }
+
+    pub fn sprite_path(self) -> String {
+        format!("sprites/items/{}.png", self.name())
+    }
+
+    pub fn ability_descriptor(&self) -> &'static AbilityDescriptor {
+        ABILITY_MAP
+            .get(self)
+            .unwrap_or_else(|| unimplemented!("Unimplemented ability {:?}", self))
+    }
+}
 
 pub trait Ability: Component + Default + Sized + 'static {
-    fn ability_id() -> AbilityId {
-        AbilityId(TypeId::of::<Self>())
-    }
+    const ABILITY_ID: AbilityId;
 
     fn unequip(player: &mut EntityCommands, inventory: &mut PlayerInventory) {
         player.remove::<Self>();
-        inventory.unequip(Self::ability_id());
+        inventory.unequip(Self::ABILITY_ID);
     }
 
     fn equip(player: &mut EntityCommands, inventory: &mut PlayerInventory, equip_slot: EquipSlot) {
         player.insert(Self::default());
-        inventory.equip(Self::ability_id(), equip_slot);
+        inventory.equip(Self::ABILITY_ID, equip_slot);
     }
 
     fn ability_descriptor() -> AbilityDescriptor {
         AbilityDescriptor {
-            id: Self::ability_id(),
+            id: Self::ABILITY_ID,
             unequip: Self::unequip,
             equip: Self::equip,
         }
@@ -90,8 +124,8 @@ pub struct AbilityDescriptor {
 }
 
 impl AbilityDescriptor {
-    pub fn id(&self) -> &AbilityId {
-        &self.id
+    pub fn id(&self) -> AbilityId {
+        self.id
     }
 
     #[allow(dead_code)] // NOTE will be used later
@@ -110,7 +144,7 @@ impl AbilityDescriptor {
 
     #[allow(dead_code)] // NOTE will be used later
     pub fn is_none(&self) -> bool {
-        self.id() == &NoneAbility::ability_id()
+        self.id() == NoneAbility::ABILITY_ID
     }
 }
 
@@ -123,7 +157,9 @@ impl Debug for AbilityDescriptor {
 #[derive(Component, Debug, Default)]
 pub struct NoneAbility;
 
-impl Ability for NoneAbility {}
+impl Ability for NoneAbility {
+    const ABILITY_ID: AbilityId = AbilityId::None;
+}
 
 #[derive(Debug, Component)]
 pub struct PlayerInventory(AbilityId, AbilityId);
@@ -140,7 +176,7 @@ impl PlayerInventory {
     }
 
     pub fn new_with<T: Ability, U: Ability>() -> Self {
-        Self(T::ability_id(), U::ability_id())
+        Self(T::ABILITY_ID, U::ABILITY_ID)
     }
 
     // pub fn equip_ability<T: Ability>(&mut self, slot: EquipSlot) {
@@ -156,23 +192,23 @@ impl PlayerInventory {
 
     pub fn unequip(&mut self, id: AbilityId) {
         if self.0 == id {
-            self.0 = NoneAbility::ability_id();
+            self.0 = NoneAbility::ABILITY_ID;
         }
 
         if self.1 == id {
-            self.1 = NoneAbility::ability_id();
+            self.1 = NoneAbility::ABILITY_ID;
         }
     }
 
     pub fn is_equipped_at<T: Ability>(&self, slot: EquipSlot) -> bool {
         match slot {
-            EquipSlot::Left => T::ability_id() == self.0,
-            EquipSlot::Right => T::ability_id() == self.1,
+            EquipSlot::Left => T::ABILITY_ID == self.0,
+            EquipSlot::Right => T::ABILITY_ID == self.1,
         }
     }
 
     pub fn get_equipped_at<T: Ability>(&self) -> Option<EquipSlot> {
-        let id = T::ability_id();
+        let id = T::ABILITY_ID;
 
         if self.0 == id {
             Some(EquipSlot::Left)
@@ -225,6 +261,20 @@ impl EquipSlot {
     }
 }
 
+// #[derive(Debug, Component, Clone, Copy, Default)]
+// pub struct ResetAbilities;
+
+// impl Ability for ResetAbilities {
+//     const ABILITY_ID: AbilityId = AbilityId::Reset;
+
+//     fn equip(player: &mut EntityCommands, inventory: &mut PlayerInventory, equip_slot: EquipSlot) {
+//         let unequip = inventory.0.ability_descriptor().unequip;
+//         unequip(player, inventory);
+//         let unequip = inventory.1.ability_descriptor().unequip;
+//         unequip(player, inventory);
+//     }
+// }
+
 const PLAYER_SHOT_DAMAGE: u32 = 2;
 
 /// The shooting ability, currently the `Earth` ability
@@ -233,7 +283,9 @@ pub struct PlayerShoot {
     last_shot: Instant,
 }
 
-impl Ability for PlayerShoot {}
+impl Ability for PlayerShoot {
+    const ABILITY_ID: AbilityId = AbilityId::Earth;
+}
 
 impl Default for PlayerShoot {
     fn default() -> Self {

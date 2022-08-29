@@ -4,7 +4,7 @@ use std::{any::TypeId, time::Duration};
 use crate::{
     physics::Gravity,
     player::{
-        abilities::{Ability, EquipSlot, PlayerInventory},
+        abilities::{Ability, AbilityId, EquipSlot, PlayerInventory},
         PlayerMovement,
     },
 };
@@ -19,7 +19,9 @@ pub struct PlayerDash {
     pub(crate) last_dash: Option<Instant>,
 }
 
-impl Ability for PlayerDash {}
+impl Ability for PlayerDash {
+    const ABILITY_ID: AbilityId = AbilityId::Fire;
+}
 
 pub fn player_dash_system(
     mouse_input: ResMut<Input<MouseButton>>,

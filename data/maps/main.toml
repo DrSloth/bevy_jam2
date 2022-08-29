@@ -78,19 +78,19 @@ zrot = 270
 
 [sprites.checkpoint0]
 sprite = "sprites/world/checkpoint/checkpoint0.png"
-checkpoint = true
+# checkpoint = true
 
 [sprites.checkpoint1]
 sprite = "sprites/world/checkpoint/checkpoint1.png"
-checkpoint = true
+# checkpoint = true
 
 [sprites.checkpoint2]
 sprite = "sprites/world/checkpoint/checkpoint2.png"
-checkpoint = true
+# checkpoint = "checkpoint"
 
 [sprites.checkpoint3]
 sprite = "sprites/world/checkpoint/checkpoint3.png"
-checkpoint = true
+checkpoint = "checkpoint"
 
 [sprites.earth_item]
 sprite = "sprites/items/earth.png"
@@ -106,11 +106,11 @@ item = "water"
 
 [sprites.stone_item]
 sprite = "sprites/items/stone.png"
-#item = "stone"
+item = "stone"
 
 [sprites.steam_item]
 sprite = "sprites/items/steam.png"
-#item = "steam"
+item = "steam"
 
 [sprites.ice_item]
 sprite = "sprites/items/ice.png"
@@ -118,10 +118,11 @@ sprite = "sprites/items/ice.png"
 
 [sprites.reset_equipped_items]
 sprite = "sprites/world/reset_items.png"
+checkpoint = "reset"
 
 [sprites.return_from_cp]
 sprite = "sprites/world/return_from_cp.png"
-
+checkpoint = "return"
 
 [sprites.slime_enemy]
 # sprite = "sprites/enemies/slime.png"
@@ -143,18 +144,8 @@ sprite = "sprites/world/pillar/pillar_body.png"
 [sprites.pillar_bottom]
 sprite = "sprites/world/pillar/pillar_bottom.png"
 
-[sprites.combine_altar0]
-sprite = "sprites/world/combine_altar/combine_altar0.png"
-
-[sprites.combine_altar1]
-sprite = "sprites/world/combine_altar/combine_altar1.png"
-
-[sprites.combine_altar2]
-sprite = "sprites/world/combine_altar/combine_altar2.png"
-
-[sprites.combine_altar3]
-sprite = "sprites/world/combine_altar/combine_altar3.png"
-combine = true
+[sprites.combine_altar]
+sprite = "sprites/world/combine_altar.png"
 
 [sprites.water_platform]
 sprite = "sprites/world/tileset/water_platform.png"
@@ -166,8 +157,15 @@ connection = "top"
 [sprites.connection_right]
 connection = "right"
 
+[sprites.connection_right2]
+connection = "right"
+
 [sprites.connection_down]
 connection = "bottom"
 
 [sprites.connection_left]
 connection = "left"
+
+[sprites.connection_left2]
+connection = "left"
+

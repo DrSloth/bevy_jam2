@@ -39,8 +39,10 @@ impl Plugin for PlayerPlugin {
         .add_system(player_input_system)
         .add_system(player_jump_system)
         .add_system(player_collision_system)
+        .add_system(player_trigger_system)
         .add_system(abilities::player_shoot_system)
         .add_system(collectibles::collect_ability_system)
+        .add_system(collectibles::combine_altar_system)
         .add_system(abilities::player_shot_collision_system)
         .add_system(player_turn_system)
         .add_system_to_stage(CoreStage::PreUpdate, move_cursor_system)
@@ -91,7 +93,7 @@ fn player_setup_system(
         .insert(PlayerSpawn::new(&mut vel_map))
         .insert(vel_map)
         .insert(PlayerInventory::new())
-        .insert(PlayerInventory::new_with::<PlayerShoot, PlayerWallJump>())
+        .insert(PlayerInventory::new_with::<PlayerWallJump, PlayerDash>())
         // .insert(PlayerCrouch::default())
         // .insert(PlayerDoubleJump::default())
         .insert(PlayerDash::default())
@@ -102,7 +104,39 @@ fn player_setup_system(
             collision_offset: Vec2::new(PLAYER_SIZE / 8.5, PLAYER_SIZE / 3.0),
             filter: CollisionFilter::ALL,
         })
-        .insert(MoveableCollider);
+        .insert(MoveableCollider)
+        .insert(PlayerTrigger::default());
+}
+
+#[derive(Debug, Component, Default)]
+pub struct PlayerTrigger {
+    interact_triggered: bool,
+    collect_triggered: bool,
+}
+
+impl PlayerTrigger {
+    pub fn trigger_interact(&mut self) {
+        self.interact_triggered = true;
+    }
+
+    pub fn trigger_collect(&mut self) {
+        self.collect_triggered = true;
+    }
+}
+
+fn player_trigger_system(mut query: Query<(&mut PlayerTrigger, &mut Sprite)>) {
+    for (mut trigger, mut sprite) in query.iter_mut() {
+        if trigger.collect_triggered {
+            sprite.color = Color::BLUE;
+        } else if trigger.interact_triggered {
+            sprite.color = Color::GREEN;
+        } else {
+            sprite.color = Color::WHITE;
+        }
+
+        trigger.interact_triggered = false;
+        trigger.collect_triggered = false;
+    }
 }
 
 #[derive(Debug)]
@@ -182,7 +216,7 @@ pub fn player_jump_system(
     mut player_query: Query<(&mut PlayerMovement, &mut Gravity)>,
     mut jump_event_reader: EventReader<JumpEvent>,
 ) {
-    const JUMP_POWER: f32 = 9.0;
+    const JUMP_POWER: f32 = 7.5;
 
     for JumpEvent(entity) in jump_event_reader.iter() {
         if let Ok((mut player_movement, mut grav)) = player_query.get_mut(*entity) {

@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::{
     physics::Gravity,
     player::{
-        abilities::{Ability, EquipSlot, PlayerInventory},
+        abilities::{Ability, AbilityId, EquipSlot, PlayerInventory},
         PlayerLandEvent, PlayerMovement,
     },
 };
@@ -19,7 +19,9 @@ impl Default for PlayerDoubleJump {
     }
 }
 
-impl Ability for PlayerDoubleJump {}
+impl Ability for PlayerDoubleJump {
+    const ABILITY_ID: AbilityId = AbilityId::Steam;
+}
 
 pub fn player_double_jump_system(
     mouse_input: ResMut<Input<MouseButton>>,

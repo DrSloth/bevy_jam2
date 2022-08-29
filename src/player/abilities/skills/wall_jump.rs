@@ -5,7 +5,7 @@ use bevy::{prelude::*, sprite::collide_aabb::Collision};
 use crate::{
     physics::Gravity,
     player::{
-        abilities::{Ability, EquipSlot, PlayerInventory},
+        abilities::{Ability, AbilityId, EquipSlot, PlayerInventory},
         PlayerCollisionEvent, PlayerMovement,
     },
 };
@@ -16,7 +16,9 @@ pub struct PlayerWallJump {
     wall_jumped: bool,
 }
 
-impl Ability for PlayerWallJump {}
+impl Ability for PlayerWallJump {
+    const ABILITY_ID: AbilityId = AbilityId::Water;
+}
 
 /// On which side of a wall we are
 #[derive(Debug, Clone, Copy)]

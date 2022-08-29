@@ -4,7 +4,7 @@ use crate::{
     collision::{BreakableCollider, Collider},
     physics::{Gravity, GRAVITY, GRAVITY_MAX},
     player::{
-        abilities::{Ability, PlayerInventory},
+        abilities::{Ability, AbilityId, PlayerInventory},
         PlayerLandEvent, PlayerMovement,
     },
     PLAYER_SIZE,
@@ -15,7 +15,9 @@ pub struct PlayerCrouch {
     state: CrouchState,
 }
 
-impl Ability for PlayerCrouch {}
+impl Ability for PlayerCrouch {
+    const ABILITY_ID: AbilityId = AbilityId::Stone;
+}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum CrouchState {

@@ -12,9 +12,13 @@ use thiserror::Error;
 
 use crate::{
     asset_loaders::{AssetLoadError, EmbeddedAssetLoader, EmbeddedAssets, EmbeddedData},
+    checkpoint::{CheckpointKind, CheckpointTrigger},
     collision::{BreakableCollider, Collider, CollisionFilter},
     enemies::{EnemyKind, ENEMY_MAP},
-    player::abilities::{collectibles::CollectibleAbilityTrigger, AbilityItem, ABILITY_MAP},
+    player::abilities::{
+        collectibles::{CollectibleAbilityTrigger, CombineAltar},
+        AbilityId,
+    },
     AssetCache,
 };
 use connections::Connection;
@@ -30,9 +34,9 @@ pub const TILE_SIZE: f32 = 8.0;
 #[derive(Debug)]
 pub struct MapManager {
     /// A stack of rooms to remember the last room(s)
-    room_stack: Vec<Room>,
-    map: Map,
-    current_section: Section,
+    pub room_stack: Vec<Room>,
+    pub map: Map,
+    pub current_section: Section,
 }
 
 impl MapManager {
@@ -65,6 +69,34 @@ impl MapManager {
         }
     }
 
+    pub fn load_previous_room(
+        &mut self,
+        asset_cache: &mut AssetCache<EmbeddedAssets>,
+        assets: &mut Assets<Image>,
+        commands: &mut Commands,
+    ) -> Vec3 {
+        if let Some(room) = self.room_stack.pop() {
+            println!("{:?}", room);
+            self.load_room(
+                asset_cache,
+                assets,
+                commands,
+                LoadRoomConfig {
+                    room: room.room,
+                    section: room.section,
+                    variation: room.variation,
+                },
+                None,
+                room.player_position,
+            )
+            .unwrap_or_else(|e| panic!("Failed to load last room {}", e));
+            room.player_position
+                .unwrap_or_else(|| panic!("Previous room doesn't store position"))
+        } else {
+            panic!("Unable to load previous room");
+        }
+    }
+
     pub fn load_room(
         &mut self,
         asset_cache: &mut AssetCache<EmbeddedAssets>,
@@ -72,11 +104,13 @@ impl MapManager {
         commands: &mut Commands,
         load_room: LoadRoomConfig,
         spawn_direction: Option<ConnectionSide>,
+        player_position: Option<Vec3>,
     ) -> Result<Option<PlayerSpawnPoint>, LoadMapError> {
         let mut spawn_point: Option<Vec3> = None;
         // TODO reuse more of the buffers
         let section_path = if let Some(new_section) = load_room
             .section
+            .clone()
             .and_then(|name| (name != self.current_section.name).then(|| name))
         {
             if let Some(section_path) = self.map.sections.get(&*new_section) {
@@ -149,8 +183,11 @@ impl MapManager {
         };
 
         self.room_stack.push(Room {
-            id: load_room.room,
+            room: load_room.room,
+            section: load_room.section,
+            variation: load_room.variation,
             entity: room_parent,
+            player_position,
         });
 
         res
@@ -159,9 +196,11 @@ impl MapManager {
 
 #[derive(Debug)]
 pub struct Room {
-    #[allow(dead_code)] //TODO use this for the checkpoint room/going back one room
-    id: Cow<'static, str>,
-    entity: Entity,
+    pub entity: Entity,
+    pub room: Cow<'static, str>,
+    pub section: Option<Cow<'static, str>>,
+    pub variation: Option<usize>,
+    pub player_position: Option<Vec3>,
 }
 
 #[derive(Debug)]
@@ -183,12 +222,16 @@ pub struct TileConfig {
     zrot: i16,
     #[serde(default)]
     breakable: bool,
-    item: Option<AbilityItem>,
+    item: Option<AbilityId>,
     collision: Option<CollisionFilter>,
     #[serde(default)]
     connection: Option<ConnectionSide>,
     #[serde(default)]
     enemy: Option<EnemyKind>,
+    #[serde(default)]
+    combine: bool,
+    #[serde(default)]
+    checkpoint: Option<CheckpointKind>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -370,7 +413,7 @@ fn load_layer<P: AsRef<Path>>(
                                 "Unset connection {} for {:?}",
                                 color_hex,
                                 layer_path.as_ref()
-                            )
+                            );
                         }
                     } else {
                         translation
@@ -420,13 +463,25 @@ fn load_layer<P: AsRef<Path>>(
                     tile.insert(BreakableCollider);
                 }
 
-                if let Some(item) = tile_config.item.and_then(|item| ABILITY_MAP.get(&item)) {
-                    tile.insert(CollectibleAbilityTrigger::new_with_descriptor(
-                        Vec2::new(32.0, 64.0),
-                        Vec3::ZERO,
-                        *item,
-                    ));
+                if tile_config.combine {
+                    tile.insert(CombineAltar {
+                        size: Vec2::splat(8.0 * TILE_SIZE),
+                        offset: Vec3::ZERO,
+                    });
                 }
+
+                if let Some(kind) = tile_config.checkpoint {
+                    tile.insert(CheckpointTrigger {
+                        size: Vec2::splat(8.0 * TILE_SIZE),
+                        offset: Vec3::ZERO,
+                        kind,
+                    });
+                }
+
+                if let Some(item) = tile_config.item.map(|item| item.ability_descriptor()) {
+                    tile.insert(CollectibleAbilityTrigger::default_with_descriptor(item));
+                }
+
                 let tile_id = tile.id();
                 commands.entity(parent).add_child(tile_id);
             }

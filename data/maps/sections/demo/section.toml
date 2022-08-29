@@ -54,7 +54,7 @@
 "#dd0030" = "checkpoint3"
 "#000000" = "connection_up"
 "#000010" = "connection_right"
-"#000011" = "connection_right1"
+"#000011" = "connection_right2"
 "#000020" = "connection_down"
 "#000030" = "connection_left"
 "#000031" = "connection_left2"

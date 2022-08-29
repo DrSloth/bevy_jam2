@@ -39,10 +39,10 @@ pub fn connection_collision_system(
                         &mut commands,
                         connection.0.clone(), // TODO this clone could be eliminated with more 'static
                         Some(connection.1.inverse()),
+                        None,
                     )
-                    .unwrap_or_else(|e| panic!("Error loading room: {}", e));
+                    .unwrap_or_else(|e| panic!("Error loading room {}: {}", connection.0.room, e));
                 if let Some(spawn_point) = spawn_point {
-                    dbg!(&spawn_point);
                     player_trans.translation = spawn_point.spawn_point;
                     if spawn_point.spawn_dir == ConnectionSide::Bottom {
                         player_spawn.spawn_from_bottom();

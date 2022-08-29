@@ -7,6 +7,7 @@
 
 mod asset_loaders;
 mod camera;
+mod checkpoint;
 mod collision;
 mod combat;
 mod enemies;
@@ -59,6 +60,7 @@ fn main() {
         .add_startup_system(setup_system)
         .add_startup_system(initial_room_setup)
         .add_startup_system(grab_mouse)
+        .add_system(checkpoint::checkpoint_system)
         .add_system(combat::move_projectile_system)
         .add_system_to_stage(CAMERA_MOVE_STAGE, camera::camera_follow_system)
         .add_system_to_stage(COLLISION_STAGE, collision::collision_system)
@@ -110,12 +112,14 @@ fn initial_room_setup(
         LoadRoomConfig {
             section: None,
             // room: "tt_need_earth".into(),
-            room: "s1_combine".into(),
+            // room: "s1_combine".into(),
+            // room: "tt_fall_lr_checkpoint".into(),
             // room: "tt_need_fire_earth".into(),
             variation: None,
-            // room: "tt_get_earth".into(),
+            room: "tt_get_earth".into(),
             // variation: Some(0),
         },
+        None,
         None,
     ) {
         panic!("Could not load initial room: {}", e);
