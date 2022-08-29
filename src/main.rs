@@ -109,7 +109,8 @@ fn initial_room_setup(
         &mut commands,
         LoadRoomConfig {
             section: None,
-            room: "tt_need_earth".into(),
+            // room: "tt_need_earth".into(),
+            room: "s1_combine".into(),
             // room: "tt_need_fire_earth".into(),
             variation: None,
             // room: "tt_get_earth".into(),

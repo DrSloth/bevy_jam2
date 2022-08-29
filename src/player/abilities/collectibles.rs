@@ -74,3 +74,36 @@ pub fn collect_ability_system(
         }
     }
 }
+
+#[derive(Component, Debug)]
+pub struct CombineAltar {
+    pub size: Vec2,
+    pub offset: Vec3,
+}
+
+pub fn combine_altar_system(
+    altar_query: Query<(&CombineAltar, &Transform)>,
+    mut player_query: Query<(&Collider, &Transform, &mut Sprite, &PlayerInventory)>,
+) {
+    for (player_collider, player_transform, mut player_sprite, inv) in player_query.iter_mut() {
+        let mut mark = false;
+        for (altar, altar_transform) in altar_query.iter() {
+            let collision = collide_aabb::collide(
+                player_transform.translation,
+                player_collider.size,
+                altar_transform.translation + altar.offset,
+                altar.size,
+            );
+
+            if collision.is_some() {
+                mark = true;
+            }
+        }
+        
+        if mark {
+            player_sprite.color = Color::BLUE;
+        } else {
+            player_sprite.color = Color::WHITE;
+        }
+    }
+}
