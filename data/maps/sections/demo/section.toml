@@ -1,7 +1,7 @@
 [colors]
 "#ffffff" = "brick"
 "#ffffbb" = "cracked_brick"
-"#ffff00" = "cracked_brick_permanent"
+"#ffff00" = "cracked_brick"#_permanent"
 "#ffff88" = "platform"
 "#ffff44" = "gate"
 "#bb0044" = "pillar_body"
@@ -60,6 +60,6 @@
 "#000031" = "connection_left2"
 
 "#cc0000" = "slime_enemy"
-"#cc0088" = "skeleton_enemy"
+"#cc0088" = "slime_enemy"#"skeleton_enemy"
 "#cc00ff" = "ghost_enemy"
 "#cc8800" = "lavasnake"
