@@ -4,10 +4,10 @@
 "#ffff00" = "cracked_brick_permanent"
 "#ffff88" = "platform"
 "#ffff44" = "gate"
-"#bb0000" = "pillar_body"
-"#bb0044" = "pillar_top"
+"#bb0044" = "pillar_body"
+"#bb0000" = "pillar_top"
 "#bb0088" = "pillar_bottom"
-"#bb00b3" = "combine_altarnnnn"
+"#bb00b3" = "combine_altar"
 "#0000aa" = "water_platform"
 
 "#ffbb00" = "border_edge_z0"
