@@ -1,5 +1,5 @@
-layers = ["borders.png", "bricks.png", "connections.png", "collisions.png"]
-variations = [["breakable_bottom.png", "breakable_right.png"]]
+layers = ["borders.png", "bricks.png", "connections.png", "collisions.png", "breakable_top_perm.png"]
+variations = [["breakable_bottom.png"]]
 collisions = {"collisions.png" = true}
 uncleared = 0
 
