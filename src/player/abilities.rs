@@ -25,10 +25,11 @@ use std::{
     time::Duration,
 };
 
-use super::MouseCursor;
+use super::{MouseCursor, PlayerMovement};
 use crate::{
     collision::{BreakableCollider, Collider},
     combat::Projectile,
+    enemies::EnemyHealth,
     physics::VelocityMap,
 };
 
@@ -37,6 +38,7 @@ pub static ABILITY_MAP: Lazy<HashMap<AbilityItem, AbilityDescriptor>> = Lazy::ne
     let mut map = HashMap::new();
     map.insert(AbilityItem::Fire, PlayerDash::ability_descriptor());
     map.insert(AbilityItem::Earth, PlayerShoot::ability_descriptor());
+    map.insert(AbilityItem::Water, PlayerWallJump::ability_descriptor());
     map.insert(AbilityItem::Steam, PlayerDoubleJump::ability_descriptor());
     map.insert(AbilityItem::Stone, PlayerCrouch::ability_descriptor());
 
@@ -181,15 +183,15 @@ impl PlayerInventory {
         }
     }
 
-    pub fn first_free_slot(&self) -> Option<EquipSlot> {
-        if self.0 == NoneAbility::ability_id() {
-            Some(EquipSlot::Left)
-        } else if self.1 == NoneAbility::ability_id() {
-            Some(EquipSlot::Right)
-        } else {
-            None
-        }
-    }
+    // pub fn first_free_slot(&self) -> Option<EquipSlot> {
+    //     if self.0 == NoneAbility::ability_id() {
+    //         Some(EquipSlot::Left)
+    //     } else if self.1 == NoneAbility::ability_id() {
+    //         Some(EquipSlot::Right)
+    //     } else {
+    //         None
+    //     }
+    // }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -213,7 +215,17 @@ impl EquipSlot {
             Self::Right => MouseButton::Right,
         }
     }
+
+    pub fn from_equipkey(equip_key: KeyCode) -> Option<Self> {
+        match equip_key {
+            KeyCode::Q => Some(Self::Left),
+            KeyCode::E => Some(Self::Right),
+            _ => None,
+        }
+    }
 }
+
+const PLAYER_SHOT_DAMAGE: u32 = 2;
 
 /// The shooting ability, currently the `Earth` ability
 #[derive(Debug, Component)]
@@ -238,7 +250,7 @@ pub fn player_shoot_system(
     cursor_query: Query<&Transform, With<MouseCursor>>,
 ) {
     const PLAYER_PROJECTILE_SPEED: f32 = 5.5;
-    const PLAYER_SHOOT_INTERVAL: Duration = Duration::from_millis(450);
+    const PLAYER_SHOOT_INTERVAL: Duration = Duration::from_millis(250);
     const PLAYER_SHOT_SIZE: f32 = 4.0;
 
     for click in mouse_input.get_pressed() {
@@ -303,21 +315,39 @@ impl PlayerShotProjectile {
 pub fn player_shot_collision_system(
     mut commands: Commands,
     shot_query: Query<(&Transform, &PlayerShotProjectile, Entity)>,
-    breakable_wall_query: Query<(&Transform, &Collider, Option<&BreakableCollider>, Entity)>,
+    mut collision_query: Query<
+        (
+            &Transform,
+            &Collider,
+            Option<&mut EnemyHealth>,
+            Option<&BreakableCollider>,
+            Entity,
+        ),
+        Without<PlayerMovement>,
+    >,
 ) {
     'outer: for (shot_trans, shot, shot_entity) in shot_query.iter() {
-        for (wall_trans, wall_coll, breakable, wall_entity) in breakable_wall_query.iter() {
-            if collide_aabb::collide(
+        for (coll_trans, collider, enemy_health, breakable, wall_entity) in
+            collision_query.iter_mut()
+        {
+            if !collider.filter.collides_with_bullets() {
+                continue;
+            }
+
+            let collision = collide_aabb::collide(
                 shot_trans.translation,
                 shot.size,
-                wall_trans.translation,
-                wall_coll.size,
-            )
-            .is_some()
-            {
+                coll_trans.translation,
+                collider.size,
+            );
+            if collision.map_or(false, |coll| collider.filter.is_collision(&coll)) {
                 commands.entity(shot_entity).despawn();
                 if breakable.is_some() {
                     commands.entity(wall_entity).despawn();
+                }
+
+                if let Some(mut health) = enemy_health {
+                    *health -= PLAYER_SHOT_DAMAGE;
                 }
                 continue 'outer;
             }

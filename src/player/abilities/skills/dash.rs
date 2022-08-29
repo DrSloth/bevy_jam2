@@ -1,5 +1,5 @@
 use bevy::{prelude::*, utils::Instant};
-use std::time::Duration;
+use std::{any::TypeId, time::Duration};
 
 use crate::{
     physics::Gravity,
@@ -9,22 +9,17 @@ use crate::{
     },
 };
 
-#[derive(Component, Debug)]
+const PLAYER_DASH_SPEED: f32 = 8.0;
+const PLAYER_DASH_INTERVAL: Duration = Duration::from_millis(1500);
+const PLAYER_RUN_EPSILON: f32 = 0.2;
+const PLAYER_DASH_DURATION: Duration = Duration::from_millis(150);
+
+#[derive(Component, Debug, Default)]
 pub struct PlayerDash {
-    pub(crate) last_dash: Instant,
-    pub(crate) dashed_once: bool,
+    pub(crate) last_dash: Option<Instant>,
 }
 
 impl Ability for PlayerDash {}
-
-impl Default for PlayerDash {
-    fn default() -> Self {
-        Self {
-            last_dash: Instant::now(),
-            dashed_once: false,
-        }
-    }
-}
 
 pub fn player_dash_system(
     mouse_input: ResMut<Input<MouseButton>>,
@@ -35,11 +30,6 @@ pub fn player_dash_system(
         &PlayerInventory,
     )>,
 ) {
-    const PLAYER_DASH_SPEED: f32 = 8.0;
-    const PLAYER_DASH_INTERVAL: Duration = Duration::from_millis(1500);
-    const PLAYER_RUN_EPSILON: f32 = 0.2;
-    const PLAYER_DASH_DURATION: Duration = Duration::from_millis(150);
-
     for click in mouse_input.get_pressed() {
         for (mut player_dash, _, _, inv) in player_query.iter_mut() {
             if !EquipSlot::from_mouse_btn(*click)
@@ -48,20 +38,29 @@ pub fn player_dash_system(
                 continue;
             }
 
-            if player_dash.last_dash.elapsed() < PLAYER_DASH_INTERVAL && player_dash.dashed_once {
+            if player_dash.last_dash.is_some() {
                 continue;
             }
 
-            player_dash.last_dash = Instant::now();
-            player_dash.dashed_once = true;
+            player_dash.last_dash = Some(Instant::now());
         }
     }
 
-    for (player_dash, mut player, mut gravity, _) in player_query.iter_mut() {
-        let elapsed = player_dash.last_dash.elapsed();
-        if elapsed > PLAYER_DASH_DURATION || !player_dash.dashed_once {
-            player.can_move = true;
-            continue;
+    for (mut player_dash, mut player, mut gravity, _) in player_query.iter_mut() {
+        match player_dash.last_dash {
+            None => {
+                continue;
+            }
+            Some(last_dash) if last_dash.elapsed() > PLAYER_DASH_INTERVAL => {
+                player.move_forbid_set.remove(&TypeId::of::<PlayerDash>());
+                player_dash.last_dash = None;
+                continue;
+            }
+            Some(last_dash) if last_dash.elapsed() > PLAYER_DASH_DURATION => {
+                player.move_forbid_set.remove(&TypeId::of::<PlayerDash>());
+                continue;
+            }
+            Some(_) => (),
         }
 
         if player.velocity.x < PLAYER_RUN_EPSILON && player.velocity.x > -PLAYER_RUN_EPSILON {
@@ -76,6 +75,6 @@ pub fn player_dash_system(
 
         player.velocity.y = 0.0;
         gravity.velocity.y = 0.0;
-        player.can_move = false;
+        player.move_forbid_set.insert(TypeId::of::<PlayerDash>());
     }
 }

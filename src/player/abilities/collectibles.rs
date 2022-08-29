@@ -1,8 +1,8 @@
 use bevy::{prelude::*, sprite::collide_aabb};
 
-use crate::collision::MoveableCollider;
+use crate::collision::Collider;
 
-use super::{Ability, AbilityDescriptor, PlayerInventory};
+use super::{Ability, AbilityDescriptor, EquipSlot, PlayerInventory};
 
 #[derive(Component, Debug)]
 pub struct CollectibleAbilityTrigger {
@@ -26,14 +26,12 @@ impl CollectibleAbilityTrigger {
     }
 }
 
-/// TODO create its own system for "triggering" the player
-
 pub fn collect_ability_system(
     mut commands: Commands,
     trigger_query: Query<(&CollectibleAbilityTrigger, &Transform, Entity)>,
     mut player_query: Query<(
         &Transform,
-        &MoveableCollider,
+        &Collider,
         &mut Sprite,
         &mut PlayerInventory,
         Entity,
@@ -55,9 +53,9 @@ pub fn collect_ability_system(
 
             if let Some(_col) = collision {
                 mark = true;
-                if key_events.just_pressed(KeyCode::W) {
-                    commands.entity(trigger_entity).despawn();
-                    if let Some(equip_slot) = inventory.first_free_slot() {
+                for key in key_events.get_just_pressed() {
+                    if let Some(equip_slot) = EquipSlot::from_equipkey(*key) {
+                        commands.entity(trigger_entity).despawn();
                         mark = false;
                         trigger.ability.equip(
                             &mut commands.entity(player_entity),

@@ -13,6 +13,7 @@ use thiserror::Error;
 use crate::{
     asset_loaders::{AssetLoadError, EmbeddedAssetLoader, EmbeddedAssets, EmbeddedData},
     collision::{BreakableCollider, Collider, CollisionFilter},
+    enemies::{EnemyKind, ENEMY_MAP},
     player::abilities::{collectibles::CollectibleAbilityTrigger, AbilityItem, ABILITY_MAP},
     AssetCache,
 };
@@ -186,6 +187,8 @@ pub struct TileConfig {
     collision: Option<CollisionFilter>,
     #[serde(default)]
     connection: Option<ConnectionSide>,
+    #[serde(default)]
+    enemy: Option<EnemyKind>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -271,6 +274,7 @@ fn load_collision_layer<P: AsRef<Path>>(
                         .insert(Collider {
                             size,
                             filter: CollisionFilter::ALL,
+                            collision_offset: Vec2::ZERO,
                         })
                         .id();
 
@@ -313,6 +317,20 @@ fn load_layer<P: AsRef<Path>>(
                     .get(sprite_id)
                     .ok_or_else(|| LoadMapError::InvalidSprite(sprite_id.clone()))?;
 
+                if let Some(enemy) = tile_config.enemy {
+                    let tile_id = match ENEMY_MAP.get(&enemy) {
+                        Some(enemy) => enemy.spawn_at(
+                            commands,
+                            assets,
+                            asset_cache,
+                            Vec3::new(f32::from(x) * TILE_SIZE, f32::from(y) * TILE_SIZE, 0.0),
+                        ),
+                        None => unimplemented!("Enemy {:?} is not yet implemented", enemy),
+                    };
+                    commands.entity(parent).add_child(tile_id);
+                    continue;
+                }
+
                 let mut tile = commands.spawn();
 
                 let translation = {
@@ -328,10 +346,10 @@ fn load_layer<P: AsRef<Path>>(
                             tile.insert(Connection(connection_config.clone(), connection_side))
                                 .insert(Collider {
                                     size: Vec2::splat(TILE_SIZE),
+                                    collision_offset: Vec2::ZERO,
                                     filter: CollisionFilter::ALL,
                                 });
 
-                            //TODO
                             let offset = match connection_side {
                                 ConnectionSide::Bottom => Vec3::new(0.0, -TILE_SIZE, 0.0),
                                 ConnectionSide::Top => Vec3::new(0.0, TILE_SIZE, 0.0),
@@ -341,7 +359,7 @@ fn load_layer<P: AsRef<Path>>(
 
                             spawn_point = match (spawn_point, spawn_dir, connection_side) {
                                 (None, Some(dir0), dir1) if dir0 == dir1 => {
-                                    Some(translation.truncate().extend(0.0) - offset)
+                                    Some(translation.truncate().extend(0.0) - offset * 2.0)
                                 }
                                 (spawn_point, _, _) => spawn_point,
                             };
@@ -391,7 +409,11 @@ fn load_layer<P: AsRef<Path>>(
                 };
 
                 if let Some(filter) = tile_config.collision {
-                    tile.insert(Collider { size, filter });
+                    tile.insert(Collider {
+                        size,
+                        filter,
+                        collision_offset: Vec2::ZERO,
+                    });
                 }
 
                 if tile_config.breakable {
@@ -406,13 +428,14 @@ fn load_layer<P: AsRef<Path>>(
                     ));
                 }
                 let tile_id = tile.id();
-                commands.entity(parent).push_children(&[tile_id]);
+                commands.entity(parent).add_child(tile_id);
             }
         }
     }
     Ok(spawn_point)
 }
 
+#[derive(Debug)]
 pub struct PlayerSpawnPoint {
     pub spawn_dir: ConnectionSide,
     pub spawn_point: Vec3,

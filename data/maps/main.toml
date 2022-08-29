@@ -102,7 +102,7 @@ item = "fire"
 
 [sprites.water_item]
 sprite = "sprites/items/water.png"
-#item = "water"
+item = "water"
 
 [sprites.stone_item]
 sprite = "sprites/items/stone.png"
@@ -124,7 +124,8 @@ sprite = "sprites/world/return_from_cp.png"
 
 
 [sprites.slime_enemy]
-sprite = "sprites/enemies/slime.png"
+# sprite = "sprites/enemies/slime.png"
+enemy = "green_slime"
 
 [sprites.skeleton_enemy]
 sprite = "sprites/enemies/skeleton.png"
