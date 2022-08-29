@@ -9,6 +9,7 @@ mod asset_loaders;
 mod camera;
 mod collision;
 mod combat;
+mod enemies;
 mod map;
 mod physics;
 mod player;
@@ -21,6 +22,7 @@ use bevy_framepace::{FramepacePlugin, FramepaceSettings, Limiter};
 use asset_loaders::{cache::AssetCache, EmbeddedAssets};
 use camera::FollowEntity;
 use collision::CollisionEvent;
+use enemies::EnemyPlugin;
 use map::{connections, LoadRoomConfig, MapManager};
 use physics::{PhysicsPlugin, VEL_MOVE_STAGE};
 use player::{MouseCursor, PlayerPlugin};
@@ -53,12 +55,14 @@ fn main() {
             SystemStage::parallel(),
         )
         .add_plugin(PlayerPlugin)
+        .add_plugin(EnemyPlugin)
         .add_startup_system(setup_system)
         .add_startup_system(initial_room_setup)
         .add_startup_system(grab_mouse)
         .add_system(combat::move_projectile_system)
         .add_system_to_stage(CAMERA_MOVE_STAGE, camera::camera_follow_system)
         .add_system_to_stage(COLLISION_STAGE, collision::collision_system)
+        .add_system_to_stage(POST_COLLISION_STAGE, collision::collision_move_system)
         .add_system(connections::connection_collision_system)
         .add_event::<CollisionEvent>()
         .insert_resource(AssetCache::<EmbeddedAssets>::new())
@@ -105,8 +109,11 @@ fn initial_room_setup(
         &mut commands,
         LoadRoomConfig {
             section: None,
-            room: "tt_get_earth".into(),
-            variation: Some(0),
+            room: "tt_need_earth".into(),
+            // room: "tt_need_fire_earth".into(),
+            variation: None,
+            // room: "tt_get_earth".into(),
+            // variation: Some(0),
         },
         None,
     ) {

@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    collision::{BreakableCollider, MoveableCollider},
+    collision::{BreakableCollider, Collider},
     physics::{Gravity, GRAVITY, GRAVITY_MAX},
     player::{
         abilities::{Ability, PlayerInventory},
@@ -35,7 +35,7 @@ pub fn player_crouch_system(
         &mut Gravity,
         &mut PlayerCrouch,
         &mut PlayerMovement,
-        &mut MoveableCollider,
+        &mut Collider,
         &PlayerInventory,
     )>,
     mouse_input: ResMut<Input<MouseButton>>,

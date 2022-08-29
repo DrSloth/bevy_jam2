@@ -4,7 +4,7 @@ use super::{ConnectionSide, LoadRoomConfig, MapManager};
 use crate::{
     asset_loaders::{cache::AssetCache, EmbeddedAssets},
     collision::CollisionEvent,
-    player::PlayerMovement,
+    player::PlayerSpawn,
 };
 
 #[derive(Component, Debug)]
@@ -14,7 +14,7 @@ pub fn connection_collision_system(
     mut commands: Commands,
     mut collision_reader: EventReader<CollisionEvent>,
     connections_query: Query<&Connection>,
-    mut player_query: Query<&mut Transform, With<PlayerMovement>>,
+    mut player_query: Query<(&mut Transform, &mut PlayerSpawn)>,
     mut asset_cache: ResMut<AssetCache<EmbeddedAssets>>,
     mut assets: ResMut<Assets<Image>>,
     mut map: ResMut<MapManager>,
@@ -26,7 +26,9 @@ pub fn connection_collision_system(
             }
 
             // dbg!(&collision);
-            if let Ok(mut player_trans) = player_query.get_mut(collision.moving_entity) {
+            if let Ok((mut player_trans, mut player_spawn)) =
+                player_query.get_mut(collision.moving_entity)
+            {
                 if let Some(room) = map.room_stack.pop() {
                     commands.entity(room.entity).despawn_recursive();
                 }
@@ -40,7 +42,11 @@ pub fn connection_collision_system(
                     )
                     .unwrap_or_else(|e| panic!("Error loading room: {}", e));
                 if let Some(spawn_point) = spawn_point {
+                    dbg!(&spawn_point);
                     player_trans.translation = spawn_point.spawn_point;
+                    if spawn_point.spawn_dir == ConnectionSide::Bottom {
+                        player_spawn.spawn_from_bottom();
+                    }
                 }
             }
         }
