@@ -1,8 +1,8 @@
-layers = ["borders.png", "bricks.png", "connections.png","collisions.png"]
-variations = [["breakable.png"]]
+layers = ["borders.png", "bricks.png", "connections.png", "collisions.png"]
+variations = [["breakables.png"]]
 collisions = {"collisions.png" = true}
 
 [connections]
-"#000010" = {room = "tt_need_fire_earth"}
+"#000010" = {room = "tt_need_fire_earth", variation = 0}
 "#000000" = {room = "tt_get_earth"}
-"#000030" = {room = "tt_need_earth"}
+"#000030" = {room = "tt_need_earth", variation = 0}

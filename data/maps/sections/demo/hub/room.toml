@@ -3,6 +3,6 @@ collisions = {"collisions.png" = true}
 
 [connections]
 "#000000" = {room = "s2_need_earth"}
-"#000010" = {room = "s1_need_fire_earth"}
-"#000030" = {room = "tt_get_earth"}
+"#000010" = {room = "s1_need_fire_earth", variaton = 0}
+"#000030" = {room = "tt_get_earth", variation = 1}
 "#000031" = {room = "s1_need_steam_ice"}

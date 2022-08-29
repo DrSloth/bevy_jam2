@@ -1,7 +1,5 @@
-layers = ["borders.png", "bricks.png", "connections.png", "collisions.png", "breakable_top_perm.png"]
-variations = [["breakable_bottom.png"]]
+layers = ["borders.png", "bricks.png", "connections.png", "collisions.png", "breakable_bottom.png"]
 collisions = {"collisions.png" = true}
-uncleared = 0
 
 [connections]
 "#000030" = {room = "s5_need_ice"}
