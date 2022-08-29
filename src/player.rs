@@ -144,7 +144,7 @@ pub fn player_jump_system(
     mut player_query: Query<(&mut PlayerMovement, &Gravity)>,
     mut jump_event_reader: EventReader<JumpEvent>,
 ) {
-    const JUMP_POWER: f32 = 7.5;
+    const JUMP_POWER: f32 = 9.0;
 
     for JumpEvent(entity) in jump_event_reader.iter() {
         if let Ok((mut player_movement, grav)) = player_query.get_mut(*entity) {
