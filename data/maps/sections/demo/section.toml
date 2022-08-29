@@ -1,7 +1,7 @@
 [colors]
 "#ffffff" = "brick"
 "#ffffbb" = "cracked_brick"
-"#ffff00" = "cracked_brick_permanent"
+"#ffff00" = "cracked_brick"#_permanent"
 "#ffff88" = "platform"
 "#ffff44" = "gate"
 "#bb0044" = "pillar_body"
