@@ -143,10 +143,18 @@ sprite = "sprites/world/pillar/pillar_body.png"
 [sprites.pillar_bottom]
 sprite = "sprites/world/pillar/pillar_bottom.png"
 
-[sprites.combine_altar]
-sprite = "sprites/world/combine_altar/combine_altar.png"
-combine = true
+[sprites.combine_altar0]
+sprite = "sprites/world/combine_altar/combine_altar0.png"
 
+[sprites.combine_altar1]
+sprite = "sprites/world/combine_altar/combine_altar1.png"
+
+[sprites.combine_altar2]
+sprite = "sprites/world/combine_altar/combine_altar2.png"
+
+[sprites.combine_altar3]
+sprite = "sprites/world/combine_altar/combine_altar3.png"
+combine = true
 
 [sprites.water_platform]
 sprite = "sprites/world/tileset/water_platform.png"
