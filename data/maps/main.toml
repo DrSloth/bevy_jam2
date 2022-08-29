@@ -144,7 +144,9 @@ sprite = "sprites/world/pillar/pillar_body.png"
 sprite = "sprites/world/pillar/pillar_bottom.png"
 
 [sprites.combine_altar]
-sprite = "sprites/world/combine_altar.png"
+sprite = "sprites/world/combine_altar/combine_altar.png"
+combine = true
+
 
 [sprites.water_platform]
 sprite = "sprites/world/tileset/water_platform.png"
