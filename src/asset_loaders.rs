@@ -26,7 +26,7 @@ pub trait EmbeddedAssetLoader {
         assets: &mut Assets<Image>,
         path: P,
     ) -> Result<Handle<Image>, AssetLoadError>;
-    fn load_image<I: Pixel + ImageConverter, P: AsRef<Path>>(
+    fn load_image<I: Pixel + ImageConverter, P: AsRef<Path>,>(
         path: P,
     ) -> Result<I::Buffer, AssetLoadError>;
 }

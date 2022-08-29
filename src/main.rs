@@ -16,7 +16,11 @@ mod physics;
 mod player;
 mod util;
 
-use bevy::prelude::*;
+use bevy::{
+    core_pipeline::clear_color::ClearColorConfig,
+    prelude::*,
+    render::camera::{ScalingMode, Viewport},
+};
 
 use bevy_framepace::{FramepacePlugin, FramepaceSettings, Limiter};
 
@@ -24,7 +28,7 @@ use asset_loaders::{cache::AssetCache, EmbeddedAssets};
 use camera::FollowEntity;
 use collision::CollisionEvent;
 use enemies::EnemyPlugin;
-use map::{connections, LoadRoomConfig, MapManager};
+use map::{connections, LoadRoomConfig, MapManager, TILE_SIZE};
 use physics::{PhysicsPlugin, VEL_MOVE_STAGE};
 use player::{MouseCursor, PlayerPlugin};
 
@@ -79,8 +83,17 @@ pub fn setup_system(mut commands: Commands, mut framepace: ResMut<FramepaceSetti
     commands
         .spawn_bundle(Camera2dBundle {
             projection: OrthographicProjection {
-                scale: 0.2,
+                scale: 0.175,
+                // scaling_mode: ScalingMode::FixedHorizontal(TILE_SIZE * 32.0),
+                // scaling_mode: ScalingMode::None,
+                // left: 0.0,
+                // right: TILE_SIZE * 32.0,
+                // bottom: 0.0,
+                // top: TILE_SIZE * 18.0,
                 ..Default::default()
+            },
+            camera_2d: Camera2d {
+                clear_color: ClearColorConfig::Custom(Color::BLACK),
             },
             transform: Transform::from_xyz(0.0, 0.0, 10.0),
             ..Default::default()
@@ -104,7 +117,29 @@ fn initial_room_setup(
     mut asset_cache: ResMut<AssetCache<EmbeddedAssets>>,
     mut assets: ResMut<Assets<Image>>,
     mut map_manager: ResMut<MapManager>,
+    audio: ResMut<Audio>,
+    mut audio_assets: ResMut<Assets<AudioSource>>,
 ) {
+    audio.play_with_settings(
+        asset_cache.load_music(&mut audio_assets, "music.ogg"),
+        PlaybackSettings {
+            repeat: true,
+            ..Default::default()
+        },
+    );
+
+    commands.spawn_bundle(SpriteBundle {
+        texture: asset_cache
+            .load_image(&mut assets, "sprites/world/background.png")
+            .unwrap(),
+        transform: Transform::from_xyz(256.0, 256.0, -5.0),
+        sprite: Sprite {
+            // custom_size: Some(Vec2::new(512.0, 1000.0)),
+            ..Default::default()
+        },
+        ..Default::default()
+    });
+
     if let Err(e) = map_manager.load_room(
         &mut asset_cache,
         &mut assets,

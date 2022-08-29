@@ -107,6 +107,7 @@ impl MapManager {
         player_position: Option<Vec3>,
     ) -> Result<Option<PlayerSpawnPoint>, LoadMapError> {
         let mut spawn_point: Option<Vec3> = None;
+        let mut size = Vec2::ZERO;
         // TODO reuse more of the buffers
         let section_path = if let Some(new_section) = load_room
             .section
@@ -149,7 +150,7 @@ impl MapManager {
                     section_path.join(&*load_room.room).join(layer),
                 )?;
             } else {
-                spawn_point = load_layer(
+                let (new_spawn_point, new_size) = load_layer(
                     asset_cache,
                     assets,
                     commands,
@@ -163,6 +164,9 @@ impl MapManager {
                     spawn_direction,
                     section_path.join(&*load_room.room).join(layer),
                 )?;
+                
+                spawn_point = new_spawn_point;
+                size = new_size;
             }
         }
 
@@ -187,6 +191,7 @@ impl MapManager {
             section: load_room.section,
             variation: load_room.variation,
             entity: room_parent,
+            size: size * TILE_SIZE,
             player_position,
         });
 
@@ -201,6 +206,7 @@ pub struct Room {
     pub section: Option<Cow<'static, str>>,
     pub variation: Option<usize>,
     pub player_position: Option<Vec3>,
+    pub size: Vec2,
 }
 
 #[derive(Debug)]
@@ -342,7 +348,7 @@ fn load_layer<P: AsRef<Path>>(
     parent: Entity,
     spawn_dir: Option<ConnectionSide>,
     layer_path: P,
-) -> Result<Option<Vec3>, LoadMapError> {
+) -> Result<(Option<Vec3>, Vec2), LoadMapError> {
     let mut spawn_point: Option<Vec3> = None;
     let image = EmbeddedData::load_image::<Rgba<u8>, _>(layer_path.as_ref())?;
     for (row, y) in image.rows().rev().zip(0i16..) {
@@ -487,7 +493,13 @@ fn load_layer<P: AsRef<Path>>(
             }
         }
     }
-    Ok(spawn_point)
+    let height =
+        i16::try_from(image.rows().count()).unwrap_or_else(|e| panic!("image too hight {}", e));
+    let width = i16::try_from(image.pixels().count())
+        .unwrap_or_else(|e| panic!("image width too large {}", e))
+        / height;
+
+    Ok((spawn_point, Vec2::new(f32::from(width), f32::from(height))))
 }
 
 #[derive(Debug)]

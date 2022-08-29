@@ -25,7 +25,9 @@ impl<T: EmbeddedAssetLoader> AssetCache<T> {
         path: P,
     ) -> Result<Handle<Image>, AssetLoadError> {
         match self.cache.get(path.as_ref()) {
-            Some(handle) => Ok(assets.get_handle(handle)),
+            Some(handle) => {
+                Ok(assets.get_handle(handle))
+            }
             None => {
                 let handle = T::load_image_as_asset(assets, path.as_ref())?;
                 let h = assets.get_handle(&handle);
@@ -33,5 +35,12 @@ impl<T: EmbeddedAssetLoader> AssetCache<T> {
                 Ok(h)
             }
         }
+    }
+    
+    pub fn load_music<P: AsRef<Path>>(&mut self, audio_assets: &mut Assets<AudioSource>, path: P) -> Handle<AudioSource> {
+        let audio = T::load(path).unwrap();
+        audio_assets.add(AudioSource {
+            bytes: audio.into()
+        })
     }
 }
