@@ -116,7 +116,7 @@ fn initial_room_setup(
             // room: "tt_fall_lr_checkpoint".into(),
             // room: "tt_need_fire_earth".into(),
             variation: None,
-            room: "tt_get_earth".into(),
+            room: "s2_need_stone_water".into(),
             // variation: Some(0),
         },
         None,

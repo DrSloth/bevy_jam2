@@ -60,6 +60,6 @@
 "#000031" = "connection_left2"
 
 "#cc0000" = "slime_enemy"
-"#cc0088" = "skeleton_enemy"
+"#cc0088" = "slime_enemy"#"skeleton_enemy"
 "#cc00ff" = "ghost_enemy"
 "#cc8800" = "lavasnake"

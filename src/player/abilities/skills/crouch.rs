@@ -44,7 +44,7 @@ pub fn player_crouch_system(
 ) {
     const CROUCH_FALL_SPEED: f32 = GRAVITY * 3.0;
     const MAX_CROUCH_FALL_SPEED: f32 = GRAVITY_MAX * 3.0;
-    const CROUCH_SIZE: f32 = 4.0;
+    const CROUCH_SIZE: f32 = 0.1;
     // const CROUCH_SIZE: f32 = 16.0;
 
     for (mut grav, mut crouch, mut player_move, mut moving_collider, inv) in query.iter_mut() {
