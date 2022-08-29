@@ -7,7 +7,11 @@
 "#bb0044" = "pillar_body"
 "#bb0000" = "pillar_top"
 "#bb0088" = "pillar_bottom"
-"#bb00b3" = "combine_altar"
+"#bb00b0" = "combine_altar0"
+"#bb00b1" = "combine_altar1"
+"#bb00b2" = "combine_altar2"
+"#bb00b3" = "combine_altar3"
+
 "#0000aa" = "water_platform"
 
 "#ffbb00" = "border_edge_z0"
